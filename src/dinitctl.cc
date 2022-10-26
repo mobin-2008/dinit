@@ -1137,6 +1137,8 @@ static int service_status(int socknum, cpbuffer_t &rbuffer, const char *service_
         return 1;
     }
 
+    bool service_fail = false;
+    
     // Issue STATUS request
     {
         auto m = membuf()
@@ -1181,7 +1183,8 @@ static int service_status(int socknum, cpbuffer_t &rbuffer, const char *service_
         switch (current) {
         case service_state_t::STOPPED:
             cout << "STOPPED";
-            switch (stop_reason) {
+            service_fail = true;
+	    switch (stop_reason) {
             case stopped_reason_t::DEPRESTART:
                 cout << " (dependency restarted)";
                 break;
@@ -1264,7 +1267,12 @@ static int service_status(int socknum, cpbuffer_t &rbuffer, const char *service_
         }
     }
 
-    return 0;
+    if (service_fail) {
+        return 3;
+    }
+    else {
+        return 0;
+    }
 }
 
 static int add_remove_dependency(int socknum, cpbuffer_t &rbuffer, bool add,
