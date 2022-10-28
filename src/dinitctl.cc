@@ -1268,7 +1268,7 @@ static int service_status(int socknum, cpbuffer_t &rbuffer, const char *service_
     }
 
     if (service_fail) {
-        return 3;
+        return 1;
     }
     else {
         return 0;
