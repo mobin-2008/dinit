@@ -574,9 +574,9 @@ int dinit_main(int argc, char **argv)
         log(loglevel_t::NOTICE, false, "Starting system");
     }
     
-    // Only try to set up the external log now if we aren't the system init. (If we are the
-    // system init, wait until the log service starts).
-    if (!am_system_init && log_specified) setup_external_log();
+    // Only try to set up the external log (via syslog) now if we aren't the system init. (If we
+    // are the system init, wait until the log service starts, unless a logfile has been specified).
+    if (!am_system_init || log_specified) setup_external_log();
 
     if (env_file != nullptr) {
         read_env_file(env_file, true, main_env);
@@ -795,23 +795,23 @@ static void control_socket_ready() noexcept {
     if (socket_ready_fd > 2) {
         close(socket_ready_fd);
     }
-    // Ensure this can only be called once
+    // Ensure that we don't try to issue readiness again:
     socket_ready_fd = -1;
 }
 
 // Callback when the root filesystem is read/write:
 void rootfs_is_rw() noexcept
 {
-    open_control_socket(true);
-    if (! did_log_boot) {
+    if (!control_socket_open) {
+        open_control_socket(true);
+        control_socket_ready();
+    }
+    if (!did_log_boot) {
         did_log_boot = log_boot();
     }
-    // If the control socket failed to open early on, there was no readiness
-    // notification, so do it here for a second time, just in case
-    control_socket_ready();
 }
 
-// Open/create the control socket, normally /dev/dinitctl, used to allow client programs to connect
+// Open/create the control socket, normally /run/dinitctl, used to allow client programs to connect
 // and issue service orders and shutdown commands etc. This can safely be called multiple times;
 // once the socket has been successfully opened, further calls will check the socket file is still
 // present and re-create it if not.
@@ -828,7 +828,7 @@ static bool open_control_socket(bool report_ro_failure) noexcept
         }
     }
 
-    if (! control_socket_open) {
+    if (!control_socket_open) {
         const char * saddrname = control_socket_path;
         size_t saddrname_len = strlen(saddrname);
         uint sockaddr_size = offsetof(struct sockaddr_un, sun_path) + saddrname_len + 1;
@@ -875,12 +875,13 @@ static bool open_control_socket(bool report_ro_failure) noexcept
         unlink(saddrname);
 
         if (bind(sockfd, (struct sockaddr *) name, sockaddr_size) == -1) {
-            if (errno != EROFS || report_ro_failure) {
+            bool have_error = (errno != EROFS || report_ro_failure);
+            if (have_error) {
                 log(loglevel_t::ERROR, "Error binding control socket: ", strerror(errno));
             }
             close(sockfd);
             free(name);
-            return (errno != EROFS || report_ro_failure);
+            return !have_error;
         }
         
         free(name);

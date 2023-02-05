@@ -286,6 +286,12 @@ void service_record::execute_transition() noexcept
     else if (service_state == service_state_t::STOPPING) {
         if (stop_check_dependents()) {
             waiting_for_deps = false;
+            if (onstart_flags.kill_all_on_stop) {
+                log(loglevel_t::NOTICE, true, "Sending TERM/KILL to all processes...\n");
+                kill(-1, SIGTERM);
+                sleep(1);
+                kill(-1, SIGKILL);
+            }
             bring_down();
         }
     }
@@ -386,7 +392,7 @@ bool service_record::check_deps_started() noexcept
 
 void service_record::all_deps_started() noexcept
 {
-    if (onstart_flags.starts_on_console && ! have_console) {
+    if (onstart_flags.starts_on_console && !have_console) {
         queue_for_console();
         return;
     }
@@ -420,7 +426,7 @@ void service_record::acquired_console() noexcept
 void service_record::started() noexcept
 {
     // If we start on console but don't keep it, release it now:
-    if (have_console && ! onstart_flags.runs_on_console) {
+    if (have_console && !onstart_flags.runs_on_console) {
         bp_sys::tcsetpgrp(0, bp_sys::getpgrp());
         release_console();
     }
@@ -686,9 +692,6 @@ bool service_record::stop_dependents(bool for_restart, bool restart_deps) noexce
     // We are in either STARTED or STARTING states.
     bool all_deps_stopped = true;
     for (auto dept : dependents) {
-        if (!dept->holding_acq) {
-            continue;
-        }
         if (dept->is_hard()) {
             service_record *dep_from = dept->get_from();
 
@@ -729,17 +732,15 @@ bool service_record::stop_dependents(bool for_restart, bool restart_deps) noexce
         }
         // Note that soft dependencies are retained if restarting, but otherwise
         // they are broken.
-        else if (!for_restart && !dept->is_hard()) {
+        else if (!for_restart) {
             if (dept->waiting_on) {
                 // Note, milestone which is still waiting is considered a hard dependency and
                 // is handled above. This is therefore a true soft dependency, and we can just
                 // break the dependency link.
                 dept->waiting_on = false;
                 dept->get_from()->dependency_started();
-                dept->holding_acq = false;
-                release(false);
             }
-            else {
+            if (dept->holding_acq) {
                 dept->holding_acq = false;
                 release(false);
             }
@@ -834,4 +835,12 @@ void service_set::service_active(service_record *sr) noexcept
 void service_set::service_inactive(service_record *sr) noexcept
 {
     active_services--;
+}
+
+bool triggered_service::bring_up() noexcept
+{
+    if (is_triggered) {
+        started();
+    }
+    return true;
 }
