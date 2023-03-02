@@ -79,16 +79,16 @@ you did when running dinit the first time.
 So we have dinit running, but it currently has no services to supervise. Let's
 give it something to do.
 
-Suppose we want to run mpd, the music player daemon, under dinit. Put the
-following in ` ~/.config/dinit.d/mpd`:
+Suppose we want to run pipewire, the pipewire, under dinit. Put the
+following in ` ~/.config/dinit.d/pipewire`:
 ```
 type = process
-command = /usr/local/sbin/mpd --no-daemon
+command = /usr/bin/pipewire
 restart = true
 ```
 
-This assumes, of course, that you have a suitable `mpd` at the specified path.
-If you don't have mpd installed, you can use "sleep" for testing purposes;
+This assumes, of course, that you have a suitable `pipewire` at the specified path.
+If you don't have pipewire installed, you can use "sleep" for testing purposes;
 change the `command` line above to:
 ```
 command = /usr/bin/sleep 600
@@ -101,76 +101,105 @@ $ dinitctl list
 [[+]     ] boot
 ```
 
-The mpd service isn't visible yet because dinit lazily loads services. If we
+The pipewire service isn't visible yet because dinit lazily loads services. If we
 start the service, we will see it in the list:
 ```
-$ dinitctl start mpd
-Service 'mpd' started.
+$ dinitctl start pipewire
+Service 'pipewire' started.
 $ dinitctl list
 [[+]     ] boot
-[[+]     ] mpd (pid: 14823)
+[[+]     ] pipewire (pid: 14823)
 ```
 
-Now let's simulate mpd crashing and check dinit brings it back up:
+Now let's simulate pipewire crashing and check dinit brings it back up:
 ```
 $ kill 14823
 ```
 
 On the dinit log, we see:
 ```
-[STOPPD] mpd
-[  OK  ] mpd
+[STOPPD] pipewire
+[  OK  ] pipewire
 ```
 
 And if we query dinit for its status, we see:
 ```
 $ dinitctl list
 [[+]     ] boot
-[[+]     ] mpd (pid: 1667)
+[[+]     ] pipewire (pid: 1667)
 ```
 
-Notice that a new instance of mpd is running; it has a different pid.
+Notice that a new instance of pipewire is running; it has a different pid.
 
 You can stop a service using `dinitctl stop`:
 ```
-$ dinitctl stop mpd
-Service 'mpd' stopped.
+$ dinitctl stop pipewire
+Service 'pipewire' stopped.
 $ dinitctl list
 [[+]     ] boot
-[     {-}] mpd
+[     {-}] pipewire
 ```
 
-Here the "slider" for the mpd service has been moved to the right to signify
+Here the "slider" for the pipewire service has been moved to the right to signify
 that it has been switched off.
+
+## Dependency relationship
+
+Dinit support "Dependency relationship". In short it's mean a service
+can depends on another service. Back to `pipewire` example, In daily use
+you need to run a session manager for pipewire. It's must connect
+to pipewire (and needs to run after pipewire) also it's needs pipewire
+be lives all time. Dinit offer "depends-on" relationship for these cases.
+
+Suppose we want to run your session manager for pipewire, under dinit. Put the
+following in ` ~/.config/dinit.d/pipewire-media-session`
+```
+type = process
+command  = /usr/bin/pipewire-media-session
+restart = true
+
+depends-on = pipewire
+```
+This service runs `pipewire-media-session`. Dinit resolves `depends-on` as
+1. This service needs `pipewire` to started.
+2. This service needs `pipewire` be lives all time. otherwise current service stops.
+
+So you have a `pipewire-media-session` with "hard" depends on `pipewire` service.
+Dinit also have some other "depends" include some soft depends for special cases.
+Read `dinit-service(5)` man-page for more details.
 
 ## Starting Services at Startup
 
 So far we've configured a service which can be brought up and down in an ad-hoc
-fashion. This would be ideal for SSH tunnels, for example, but mpd is the kind
+fashion. This would be ideal for SSH tunnels, for example, but pipewire is the kind
 of daemon you want to *always* run; we want it to start when dinit itself
 starts.
 
-To that end, we can use `dinitctl enable mpd`. This will start the service
-immediately *and* make sure it starts by default:
+To that end, we can use `dinitctl enable pipewire-media-session`. This will
+start the service immediately *and* make sure it starts by default:
 ```
 $ dinitctl list
 [[+]     ] boot
-[     {-}] mpd
-$ dinitctl enable mpd
-Service 'mpd' has been enabled.
+[     {-}] pipewire
+[     {-}] pipewire-media-session
+$ dinitctl enable pipewire-media-session
+Service 'pipewire-media-session' has been enabled.
 $ dinitctl list
 [[+]     ] boot
-[{+}     ] mpd (pid: 49921)
+[{+}     ] pipewire-media-session (pid: 49921)
+[{+}     ] pipewire (pid: 49967)
 ```
 
-Notice that the mpd status is shown as `{+}` rather than `[+]` as it was
-earlier. This is because it is now started only as a dependency of boot -
-we haven't explicitly marked it active (as is done via `dinitctl start`).
-This means that if boot stops, mpd will also stop (and dinit will also
-stop, seeing as it has no services left running).
+Notice that the pipewire-media-session & pipewire status is shown as `{+}`
+rather than `[+]` as it was earlier. This is because it is now started only
+as a dependency of boot - we haven't explicitly marked it active (as is done
+via `dinitctl start`). This means that if boot stops, pipewire-media-session
+will also stop (and dinit will also stop, seeing as it has no services left
+running). Also if `pipewire-media-session` stops, `pipewire` will be stops
+immediately because it is now started only as a dependency of pipewire-media-session.
 
-We now want to restart dinit, to see that the mpd service does indeed start
-automatically. First, stop dinit:
+We now want to restart dinit, to see that the pipewire-media-session & pipewire
+service does indeed start automatically. First, stop dinit:
 ```
 $ dinitctl shutdown
 Shutting down dinit...
@@ -181,18 +210,19 @@ in the terminal where it is running in the foreground; or, as alluded earlier, y
 could stop the boot service via `dinitctl stop boot`).
 
 Start dinit again (`dinit` in the other terminal, or `dinit -q &`, as before).
-Then list services to make sure mpd started:
+Then list services to make sure pipewire started:
 ```
 $ dinitctl list
 [[+]     ] boot
-[{+}     ] mpd (pid: 17601)
+[{+}     ] pipewire-media-session (pid: 17601)
+[{+}     ] pipewire (pid: 16998)
 ```
 
-Success! - mpd was started when dinit started.
+Success! - pipewire-media-session and pipewire was started when dinit started.
 
 If you look in the `waits-for.d` directory we configured earlier, you will
-find a symlink to the mpd service description file. This is how dinit keeps
-track of what should be started by default.
+find a symlink to the pipewire-media-session service description file. This is
+how dinit keeps track of what should be started by default.
 
 ## Further Reading
 
@@ -201,3 +231,5 @@ For example, we've hardly touched on dependencies (where one service depends
 upon another to function). For full details about service configuration, read
 the `dinit-service(5)` manual page. The `dinit`, `dinitctl` and `dinitcheck`
 commands also have manual pages.
+
+**NEEDS REVIEW**
