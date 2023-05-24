@@ -2,7 +2,6 @@
 ## or when a PR labed with "meson".
 # WIP!
 # FIXME: paths must include Makefiles and related things to avoid meson CI for make only changes.
-# FIXME: Fix MacOS, Alpine based CI(s)
 # FIXME: We need to run this workflow only in mobin-2008/dinit.
 # FIXME: Also it's need to run on master repo when PR has "meson" label.
 
@@ -83,8 +82,6 @@ jobs:
       run: |
         apt-get update
         DEBIAN_FRONTEND=noninteractive apt-get install g++:i386 meson m4:i386 g++:i386 -y
-    - name: Print g++ architecture
-      run: g++ -dumpmachine
     - name: Setup
       run: meson setup -Dunit-tests=true -Digr-tests=true dirbuild
     - name: Build
@@ -104,20 +101,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    # on MacOS, g++ symlinked to clang++
-    # We must verify that
-    - name: Verify g++ (it is g++ or clang++?)
-      run: g++ --version
-    - name: Print g++ architecture
-      run: g++ -dumpmachine
+    - name: Setup Python
+      uses: actions/setup-python@v4.6.1
+      with:
+        python-version: 3.11
+    - name: Install meson via pip
+      run: pip install meson
+    - name: Setup Meson
+      run: meson setup -Dunit-tests=true -Digr-tests=true dirbuild
     - name: Build
-      run: make
-    - name: Print dinit executive file architecture
-      run: file ./src/dinit
+      run: meson compile -C dirbuild
     - name: Unit tests
-      run: make check
+      run: meson test -v --suite=unit_tests -C dirbuild
     - name: Integration tests
-      run: make check-igr
+      run: meson test -v --suite=igr_tests -C dirbuild
 
   Alpine-latest_build:
 
@@ -132,23 +129,21 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: uraimo/run-on-arch-action@v2.5.0
-      name: Getting depends & build & unit tests & integration tests
+      name: Getting depends & setup & build & unit & integration tests
       with:
         arch: ${{ matrix.arch }}
         distro: alpine_latest
         run: |
           apk add ncurses
           echo "$(tput bold) !---- ${{ matrix.arch }} BUILD ----!$(tput sgr0)"
-          echo "$(tput bold) ----Getting depends---- :$(tput sgr0) apk update && apk add make g++ m4 file"
+          echo "$(tput bold) ----Getting depends---- :$(tput sgr0) apk update && apk add meson g++ m4"
           apk update
           apk add make g++ m4 file
-          echo "$(tput bold) ----Print g++ arch---- :$(tput sgr0) g++ -dumpmachine"
-          g++ -dumpmachine
-          echo "$(tput bold) ----Build---- :$(tput sgr0) make"
-          make
-          echo "$(tput bold) ----Print dinit executive file architecture---- :$(tput sgr0) file ./src/dinit"
-          file ./src/dinit
-          echo "$(tput bold) ----Unit tests---- :$(tput sgr0) make check"
-          make check
-          echo "$(tput bold) ----Integration tests---- :$(tput sgr0) make check-igr"
-          make check-igr
+          echo "$(tput bold) ----Setup---- :$(tput sgr0) meson setup -Dunit-tests=true -Digr-tests=true dirbuild
+          meson setup -Dunit-tests=true -Digr-tests=true dirbuild
+          echo "$(tput bold) ----Build---- :$(tput sgr0) meson compile -C dirbuild"
+          meson compile -C dirbuild
+          echo "$(tput bold) ----Unit tests---- :$(tput sgr0) meson test -v --suite=unit_tests -C dirbuild"
+          meson test -v --suite=unit_tests -C dirbuild
+          echo "$(tput bold) ----Integration tests---- :$(tput sgr0) meson test -v --suite=igr_tests -C dirbuild"
+          meson test -v --suite=igr_tests -C dirbuild
