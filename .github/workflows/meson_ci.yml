@@ -6,12 +6,12 @@
 # FIXME: We need to run this workflow only in mobin-2008/dinit.
 # FIXME: Also it's need to run on master repo when PR has "meson" label.
 
-name: Dinit Regular CI
+name: Dinit Meson based CI
 
 on:
   push:
     branches:
-      - master
+      - meson_ci_in_github #FIXME
     paths:
       - '**'
       - '!.*'
