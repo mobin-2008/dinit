@@ -101,13 +101,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Setup Python
-      uses: actions/setup-python@v4.6.1
-      with:
-        python-version: 3.11
-    - name: Install meson via pip
-      run: pip install meson
-    - name: Setup Meson
+    - name: Install meson via pip3
+      run: pip3 install meson
+    - name: Install ninja
+      run: brew install ninja
+    - name: Setup
       run: meson setup -Dunit-tests=true -Digr-tests=true dirbuild
     - name: Build
       run: meson compile -C dirbuild
