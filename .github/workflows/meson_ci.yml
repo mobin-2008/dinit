@@ -137,7 +137,7 @@ jobs:
           echo "$(tput bold) ----Getting depends---- :$(tput sgr0) apk update && apk add meson g++ m4"
           apk update
           apk add make g++ m4 file
-          echo "$(tput bold) ----Setup---- :$(tput sgr0) meson setup -Dunit-tests=true -Digr-tests=true dirbuild
+          echo "$(tput bold) ----Setup---- :$(tput sgr0) meson setup -Dunit-tests=true -Digr-tests=true dirbuild"
           meson setup -Dunit-tests=true -Digr-tests=true dirbuild
           echo "$(tput bold) ----Build---- :$(tput sgr0) meson compile -C dirbuild"
           meson compile -C dirbuild
