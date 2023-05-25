@@ -1,4 +1,5 @@
 ## Experimetal meson build system for dinit
+## خانه‌ی مان را با هم میسازیم... دیوار هایش را قرمز میکنیم
 project(
     'dinit', 
     'cpp', 
