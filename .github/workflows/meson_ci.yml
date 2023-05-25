@@ -30,7 +30,7 @@ on:
       - '!doc/linux/**'
   pull_request:
     branches:
-      - master
+      - meson_ci_on_github #FIXME
     paths:
       - '**'
       - '!.*'
