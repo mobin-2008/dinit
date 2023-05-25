@@ -2,7 +2,6 @@
 ## or when a PR labed with "meson".
 # WIP!
 # FIXME: paths must include Makefiles and related things to avoid meson CI for make only changes.
-# FIXME: We need to run this workflow only in mobin-2008/dinit.
 # FIXME: Also it's need to run on master repo when PR has "meson" label.
 
 name: Dinit Meson based CI
@@ -69,26 +68,31 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
     - name: Add i386 repos
-      if: ${{ matrix.arch == 'i386' }}
+      if: ${{ matrix.arch == 'i386' }} && ${{ github.repository == 'mobin-2008/dinit' }}
       run: dpkg --add-architecture i386
     - name: Getting depends (amd64)
-      if: ${{ matrix.arch == 'amd64' }}
+      if: ${{ matrix.arch == 'amd64' }} ${{ github.repository == 'mobin-2008/dinit' }}
       run: |
         apt-get update
         DEBIAN_FRONTEND=noninteractive apt-get install g++ meson m4 -y
     - name: Getting depends (i386)
-      if: ${{ matrix.arch == 'i386' }}
+      if: ${{ matrix.arch == 'i386' }} ${{ github.repository == 'mobin-2008/dinit' }}
       run: |
         apt-get update
         DEBIAN_FRONTEND=noninteractive apt-get install g++:i386 meson m4:i386 g++:i386 -y
     - name: Setup
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: meson setup -Dunit-tests=true -Digr-tests=true dirbuild
     - name: Build
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: meson compile -C dirbuild
     - name: Unit tests
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: meson test -v --suite=unit_tests -C dirbuild
     - name: Integration tests
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: meson test -v --suite=igr_tests -C dirbuild
 
   MacOS-latest_build:
@@ -101,17 +105,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
     - name: Install meson via pip3
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: pip3 install meson
     - name: Install ninja
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: brew install ninja
     - name: Setup
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: meson setup -Dunit-tests=true -Digr-tests=true dirbuild
     - name: Build
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: meson compile -C dirbuild
     - name: Unit tests
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: meson test -v --suite=unit_tests -C dirbuild
     - name: Integration tests
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       run: meson test -v --suite=igr_tests -C dirbuild
 
   Alpine-latest_build:
@@ -128,6 +139,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: uraimo/run-on-arch-action@v2.5.0
       name: Getting depends & setup & build & unit & integration tests
+      if: ${{ github.repository == 'mobin-2008/dinit' }}
       with:
         arch: ${{ matrix.arch }}
         distro: alpine_latest
