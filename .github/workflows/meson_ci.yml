@@ -2,7 +2,6 @@
 ## or when a PR labed with "meson".
 # WIP!
 # FIXME: paths must include Makefiles and related things to avoid meson CI for make only changes.
-# FIXME: Also it's need to run on master repo when PR has "meson" label.
 
 name: Dinit Meson based CI
 
@@ -57,7 +56,7 @@ jobs:
 
   Debian-bullseye_build:
 
-    if: ${{ !github.repository == 'mobin-2008/dinit' }}
+    if: ${{ !github.repository == 'mobin-2008/dinit' || contains(github.event.pull_request.labels.*.name, 'meson') }}
     runs-on: ubuntu-latest
     container:
       image: debian:bullseye
@@ -93,7 +92,7 @@ jobs:
 
   MacOS-latest_build:
 
-    if: ${{ !github.repository == 'mobin-2008/dinit' }}
+    if: ${{ !github.repository == 'mobin-2008/dinit' || contains(github.event.pull_request.labels.*.name, 'meson') }}
     runs-on: macos-latest
     strategy:
       matrix:
@@ -117,7 +116,7 @@ jobs:
 
   Alpine-latest_build:
 
-    if: ${{ !github.repository == 'mobin-2008/dinit' }}
+    if: ${{ !github.repository == 'mobin-2008/dinit' || contains(github.event.pull_request.labels.*.name, 'meson') }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
