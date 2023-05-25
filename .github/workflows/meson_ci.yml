@@ -65,7 +65,7 @@ jobs:
         include:
           - arch: 'amd64'
           - arch: 'i386'
-    if: ${{ github.repository == !'mobin-2008/dinit' }}
+    if: ${{ !github.repository == 'mobin-2008/dinit' }}
 
     steps:
     - uses: actions/checkout@v3
@@ -103,7 +103,7 @@ jobs:
       matrix:
         include:
           - arch: 'amd64'
-    if: ${{ github.repository == 'mobin-2008/dinit' }}
+    if: ${{ !github.repository == 'mobin-2008/dinit' }}
 
     steps:
     - uses: actions/checkout@v3
@@ -136,7 +136,7 @@ jobs:
           - arch: 'armv6'
           - arch: 'armv7'
           - arch: 'aarch64'
-    if: ${{ github.repository == 'mobin-2008/dinit' }}
+    if: ${{ !github.repository == 'mobin-2008/dinit' }}
 
     steps:
     - uses: actions/checkout@v3
