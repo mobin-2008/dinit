@@ -70,15 +70,15 @@ jobs:
     - uses: actions/checkout@v3
       if: ${{ github.repository == 'mobin-2008/dinit' }}
     - name: Add i386 repos
-      if: ${{ matrix.arch == 'i386' }} && ${{ github.repository == 'mobin-2008/dinit' }}
+      if: ${{ matrix.arch == 'i386' && github.repository == 'mobin-2008/dinit' }}
       run: dpkg --add-architecture i386
     - name: Getting depends (amd64)
-      if: ${{ matrix.arch == 'amd64' }} ${{ github.repository == 'mobin-2008/dinit' }}
+      if: ${{ matrix.arch == 'amd64' && github.repository == 'mobin-2008/dinit' }}
       run: |
         apt-get update
         DEBIAN_FRONTEND=noninteractive apt-get install g++ meson m4 -y
     - name: Getting depends (i386)
-      if: ${{ matrix.arch == 'i386' }} ${{ github.repository == 'mobin-2008/dinit' }}
+      if: ${{ matrix.arch == 'i386' && github.repository == 'mobin-2008/dinit' }}
       run: |
         apt-get update
         DEBIAN_FRONTEND=noninteractive apt-get install g++:i386 meson m4:i386 g++:i386 -y
