@@ -63,6 +63,8 @@ constexpr static int DINIT_CP_CATLOG = 20;
 // Send Signal to process
 constexpr static int DINIT_CP_SIGNAL = 21;
 
+// Replace services with each other
+constexpr static int DINIT_CP_REPLACE = 22;
 
 // Replies:
 

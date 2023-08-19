@@ -56,6 +56,8 @@ static int trigger_service(int socknum, cpbuffer_t &rbuffer, const char *service
 static int cat_service_log(int socknum, cpbuffer_t &rbuffer, const char *service_name, bool do_clear);
 static int signal_send(int socknum, cpbuffer_t &rbuffer, const char *service_name, int sig_num);
 static int signal_list();
+static int replace_service(int socknum, cpbuffer_t &rbuffer, const char *service_name, const char *to_service_name,
+        bool do_rebuild);
 
 enum class command_t {
     NONE,
@@ -82,6 +84,7 @@ enum class command_t {
     SIG_LIST,
     IS_STARTED,
     IS_FAILED,
+    REPLACE_SERVICE,
 };
 
 class dinit_protocol_error
@@ -122,6 +125,7 @@ int dinitctl_main(int argc, char **argv)
     bool show_siglist = false;
     std::string sigstr;
     int sig_num = -1;
+    bool rebuild_tree = false;
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
@@ -215,6 +219,15 @@ int dinitctl_main(int argc, char **argv)
             else if (strcmp(argv[i], "--offline") == 0 || strcmp(argv[i], "-o") == 0) {
                 offline = true;
             }
+            else if (strcmp(argv[i], "--rebuild-tree") == 0) {
+                if (command == command_t::REPLACE_SERVICE) {
+                    rebuild_tree = true;
+                }
+                else {
+                    cmdline_error = true;
+                    break;
+                }
+            }
             else {
                 cerr << "dinitctl: unrecognized/invalid option: " << argv[i] << " (use --help for help)\n";
                 return 1;
@@ -287,6 +300,9 @@ int dinitctl_main(int argc, char **argv)
             else if (strcmp(argv[i], "signal") == 0) {
                 command = command_t::SIG_SEND;
             }
+            else if (strcmp(argv[i], "replace") == 0) {
+                command = command_t::REPLACE_SERVICE;
+            }
             else {
                 cerr << "dinitctl: unrecognized command: " << argv[i] << " (use --help for help)\n";
                 return 1;
@@ -340,6 +356,17 @@ int dinitctl_main(int argc, char **argv)
                     else {
                         cmdline_error = true;
                     }
+                }
+                else {
+                    cmdline_error = true;
+                }
+            }
+            else if (command == command_t::REPLACE_SERVICE) {
+                if (service_name == nullptr) {
+                    service_name = argv[i];
+                }
+                else if (to_service_name == nullptr) {
+                    to_service_name = argv[i];
                 }
                 else {
                     cmdline_error = true;
@@ -459,6 +486,7 @@ int dinitctl_main(int argc, char **argv)
           "    dinitctl [options] setenv [name[=value] ...]\n"
           "    dinitctl [options] catlog <service-name>\n"
           "    dinitctl [options] signal <signal> <service-name>\n"
+          "    dinitctl [options] replace <service-name> <to-service>\n"
           "\n"
           "Note: An activated service continues running when its dependents stop.\n"
           "\n"
@@ -479,7 +507,8 @@ int dinitctl_main(int argc, char **argv)
           "  --no-wait        : don't wait for service startup/shutdown to complete\n"
           "  --pin            : pin the service in the requested state\n"
           "  --force          : force stop even if dependents will be affected\n"
-          "  -l, --list       : (signal) list supported signals\n";
+          "  -l, --list       : (signal) list supported signals\n"
+          "  --rebuild-tree   : (replace) Stop all old service dependencies even they are used by new service\n";
         return 0;
     }
 
@@ -601,6 +630,12 @@ int dinitctl_main(int argc, char **argv)
                 throw cp_old_server_exception();
             }
             return signal_send(socknum, rbuffer, service_name, sig_num);
+        }
+        else if (command == command_t::REPLACE_SERVICE) {
+            if (daemon_protocol_ver < 3 /* I plan to send it after 0.17 release */) {
+                throw cp_old_server_exception();
+            }
+            return replace_service(socknum, rbuffer, service_name, to_service_name, rebuild_tree);
         }
         else {
             return start_stop_service(socknum, rbuffer, service_name, command, do_pin, do_force,
@@ -2123,4 +2158,39 @@ static int cat_service_log(int socknum, cpbuffer_t &rbuffer, const char *service
     }
 
     return 0;
+}
+static int replace_service(int socknum, cpbuffer_t &rbuffer, const char *service_name, const char *to_service_name,
+        bool do_rebuild)
+{
+    using namespace std;
+
+    service_state_t from_state = service_state_t::STARTED;
+    handle_t from_handle;
+
+    service_state_t to_state = service_state_t::STOPPED;
+    handle_t to_handle;
+
+    char flags = do_rebuild ? 1 : 0;
+
+    if (!load_service(socknum, rbuffer, service_name, &from_handle, &from_state, true)
+            || !load_service(socknum, rbuffer, to_service_name, &to_handle, &to_state, true)) {
+        return 1;
+    }
+
+    // Issue REPLACE
+    auto m = membuf()
+             .append<char>(DINIT_CP_REPLACE)
+             .append<char>(flags)
+             .append(from_handle)
+             .append(to_handle);
+    write_all_x(socknum, m);
+
+    wait_for_reply(rbuffer, socknum);
+
+    if (rbuffer[0] != DINIT_RP_ACK) {
+        cerr << "dinitctl: control socket protocol error" << endl;
+        return 1;
+    }
+    return 0;
+    // ToDo
 }
