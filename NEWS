@@ -1,9 +1,16 @@
-== Version 0.17.0 (Upcoming)
+== Version 0.17.1pre (?)
+
+* TBA...
+
+== Version 0.17.0
 
 Thank you to several new sponsors, as well as existing sponsors, for supporting this release.
 Current sponsors include github users: brentfrow, brazeon, and q66 (Daniel Kolesa, author of
 Chimera Linux). Development of Dinit has also received financial support from Artix Linux.
 I am grateful for all the support, both financial and otherwise, that has been received.
+
+Special thanks to Mobin Aydinfar, who has taken on secondary maintainer duties in the lead-up to
+this release, including many valuable contributions to getting CI infrastructure up-and-running.
 
 New features:
  * A "log-type" service setting allows for control over how a service output is processed. A new
@@ -49,6 +56,7 @@ New features:
 
 Changes:
  * The default is now to restart services automatically (previously required "restart = yes").
+ * The permissions/ownership for logfiles has been reworked, see details in "New features" above.
  * Services which specify "run-as" to run as a different user now run with the supplementary
    groups of that user (this can be disabled at build time by setting USE_INITGROUPS=0).
    Thanks to Daniel Kolesa.
