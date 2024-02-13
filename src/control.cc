@@ -38,7 +38,7 @@ namespace {
 bool control_conn_t::process_packet()
 {
     using std::string;
-    
+
     // Note that where we call queue_packet, we must generally check the return value. If it
     // returns false it has either deleted the connection or marked it for deletion; we
     // shouldn't touch instance members after that point.
@@ -79,7 +79,7 @@ bool control_conn_t::process_packet()
             chklen = 2;
             return true;
         }
-        
+
         if (contains({shutdown_type_t::REMAIN, shutdown_type_t::HALT,
                 shutdown_type_t::POWEROFF, shutdown_type_t::REBOOT}, rbuf[1])) {
             auto sd_type = static_cast<shutdown_type_t>(rbuf[1]);
@@ -146,14 +146,14 @@ bool control_conn_t::process_packet()
 bool control_conn_t::process_find_load(cp_cmd pktType)
 {
     using std::string;
-    
+
     constexpr int pkt_size = 4;
-    
+
     if (rbuf.get_length() < pkt_size) {
         chklen = pkt_size;
         return true;
     }
-    
+
     srvname_len_t srvname_len;
     rbuf.extract(&srvname_len, 1, sizeof(srvname_len));
     if (srvname_len <= 0 || srvname_len > (1024 - 3)) {
@@ -164,20 +164,20 @@ bool control_conn_t::process_find_load(cp_cmd pktType)
         return true;
     }
     chklen = srvname_len + 3; // packet type + (2 byte) length + service name
-    
+
     if (rbuf.get_length() < chklen) {
         // packet not complete yet; read more
         return true;
     }
-    
+
     service_record * record = nullptr;
-    
+
     string service_name = rbuf.extract_string(3, srvname_len);
 
     // Clear the packet from the buffer
     rbuf.consume(chklen);
     chklen = 0;
-    
+
     cp_rply fail_code = cp_rply::NOSERVICE;
 
     if (pktType == cp_cmd::LOADSERVICE) {
@@ -204,7 +204,7 @@ bool control_conn_t::process_find_load(cp_cmd pktType)
         // FINDSERVICE
         record = services->find_service(service_name.c_str());
     }
-    
+
     if (record == nullptr) {
         std::vector<char> rp_buf = { (char)fail_code };
         if (! queue_packet(std::move(rp_buf))) return false;
@@ -222,7 +222,7 @@ bool control_conn_t::process_find_load(cp_cmd pktType)
     }
     rp_buf.push_back(static_cast<char>(record->get_target_state()));
     if (! queue_packet(std::move(rp_buf))) return false;
-    
+
     return true;
 }
 
@@ -310,22 +310,22 @@ bool control_conn_t::check_dependents(service_record *service, bool &had_depende
 bool control_conn_t::process_start_stop(cp_cmd pktType)
 {
     using std::string;
-    
+
     constexpr int pkt_size = 2 + sizeof(handle_t);
-    
+
     if (rbuf.get_length() < pkt_size) {
         chklen = pkt_size;
         return true;
     }
-    
+
     // 1 byte: packet type
     // 1 byte: flags eg. pin in requested state (0 = no pin, 1 = pin)
     // 4 bytes: service handle
-    
+
     bool do_pin = ((rbuf[1] & 1) == 1);
     handle_t handle;
     rbuf.extract((char *) &handle, 2, sizeof(handle));
-    
+
     service_record *service = find_service_for_key(handle);
     if (service == nullptr) {
         // Service handle is bad
@@ -336,7 +336,7 @@ bool control_conn_t::process_start_stop(cp_cmd pktType)
     }
     else {
         char ack_buf[1] = { (char)cp_rply::ACK };
-        
+
         switch (pktType) {
         case cp_cmd::STARTSERVICE:
             // start service, mark as required
@@ -444,10 +444,10 @@ bool control_conn_t::process_start_stop(cp_cmd pktType)
             // avoid warning for unhandled switch/case values
             return false;
         }
-        
+
         if (! queue_packet(ack_buf, 1)) return false;
     }
-    
+
     clear_out:
     // Clear the packet from the buffer
     rbuf.consume(pkt_size);
@@ -458,20 +458,20 @@ bool control_conn_t::process_start_stop(cp_cmd pktType)
 bool control_conn_t::process_unpin_service()
 {
     using std::string;
-    
+
     constexpr int pkt_size = 1 + sizeof(handle_t);
-    
+
     if (rbuf.get_length() < pkt_size) {
         chklen = pkt_size;
         return true;
     }
-    
+
     // 1 byte: packet type
     // 4 bytes: service handle
-    
+
     handle_t handle;
     rbuf.extract((char *) &handle, 1, sizeof(handle));
-    
+
     service_record *service = find_service_for_key(handle);
     if (service == nullptr) {
         // Service handle is bad
@@ -485,7 +485,7 @@ bool control_conn_t::process_unpin_service()
     services->process_queues();
     char ack_buf[] = { (char) cp_rply::ACK };
     if (! queue_packet(ack_buf, 1)) return false;
-    
+
     // Clear the packet from the buffer
     rbuf.consume(pkt_size);
     chklen = 0;
@@ -646,7 +646,7 @@ bool control_conn_t::list_services()
 {
     rbuf.consume(1); // clear request packet
     chklen = 0;
-    
+
     try {
         auto slist = services->list_services();
         for (auto sptr : slist) {
@@ -658,22 +658,22 @@ bool control_conn_t::list_services()
             const std::string &name = sptr->get_name();
             int nameLen = std::min((size_t)256, name.length());
             pkt_buf.resize(hdrsize + nameLen);
-            
+
             pkt_buf[0] = (char)cp_rply::SVCINFO;
             pkt_buf[1] = nameLen;
-            
+
             fill_status_buffer(&pkt_buf[2], sptr);
 
             for (int i = 0; i < nameLen; i++) {
                 pkt_buf[hdrsize+i] = name[i];
             }
-            
+
             if (!queue_packet(std::move(pkt_buf))) return false;
         }
-        
+
         char ack_buf[] = { (char) cp_rply::LISTDONE };
         if (! queue_packet(ack_buf, 1)) return false;
-        
+
         return true;
     }
     catch (std::bad_alloc &exc)
@@ -1275,7 +1275,7 @@ handle_t control_conn_t::allocate_service_handle(service_record *record)
     if (is_unique) {
         record->add_listener(this);
     }
-    
+
     try {
         key_service_map[candidate] = record;
         service_key_map.insert(std::make_pair(record, candidate));
@@ -1287,7 +1287,7 @@ handle_t control_conn_t::allocate_service_handle(service_record *record)
 
         key_service_map.erase(candidate);
     }
-    
+
     return candidate;
 }
 
@@ -1348,7 +1348,7 @@ bool control_conn_t::queue_packet(const char *pkt, unsigned size) noexcept
             size -= wr;
         }
     }
-    
+
     // Create a vector out of the (remaining part of the) packet:
     try {
         outbuf.emplace_back(pkt, pkt + size);
@@ -1376,7 +1376,7 @@ bool control_conn_t::queue_packet(const char *pkt, unsigned size) noexcept
 bool control_conn_t::queue_packet(std::vector<char> &&pkt) noexcept
 {
     bool was_empty = outbuf.empty();
-    
+
     if (was_empty) {
         outpkt_index = 0;
         // We can try sending the packet immediately:
@@ -1399,7 +1399,7 @@ bool control_conn_t::queue_packet(std::vector<char> &&pkt) noexcept
             outpkt_index = wr;
         }
     }
-    
+
     try {
         outbuf.emplace_back(std::move(pkt));
         outbuf_size += pkt.size();
@@ -1424,9 +1424,9 @@ bool control_conn_t::queue_packet(std::vector<char> &&pkt) noexcept
 bool control_conn_t::data_ready() noexcept
 {
     int fd = iob.get_watched_fd();
-    
+
     int r = rbuf.fill(fd);
-    
+
     // Note file descriptor is non-blocking
     if (r == -1) {
         if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
@@ -1437,11 +1437,11 @@ bool control_conn_t::data_ready() noexcept
         }
         return false;
     }
-    
+
     if (r == 0) {
         return true;
     }
-    
+
     // complete packet?
     while (rbuf.get_length() >= chklen) {
         try {
@@ -1462,7 +1462,7 @@ bool control_conn_t::data_ready() noexcept
         log(loglevel_t::WARN, "Received too-large control packet; dropping connection");
         bad_conn_close = true;
     }
-    
+
     return false;
 }
 
@@ -1476,7 +1476,7 @@ bool control_conn_t::send_data() noexcept
         }
         return true;
     }
-    
+
     vector<char> & pkt = outbuf.front();
     char *data = pkt.data();
     int written = bp_sys::write(iob.get_watched_fd(), data + outpkt_index, pkt.size() - outpkt_index);
@@ -1509,7 +1509,7 @@ bool control_conn_t::send_data() noexcept
             return true;
         }
     }
-    
+
     // more to send
     return false;
 }
@@ -1519,11 +1519,11 @@ control_conn_t::~control_conn_t() noexcept
     int fd = iob.get_watched_fd();
     iob.deregister(loop);
     bp_sys::close(fd);
-    
+
     // Clear service listeners
     for (auto p : service_key_map) {
         p.first->remove_listener(this);
     }
-    
+
     active_control_conns--;
 }

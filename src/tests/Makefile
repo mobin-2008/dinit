@@ -23,7 +23,7 @@ tests: $(parent_objs) tests.o test-dinit.o test-bpsys.o test-run-child-proc.o
 
 proctests: $(parent_objs) proctests.o test-dinit.o test-bpsys.o test-run-child-proc.o
 	$(CXX) -o proctests $(parent_objs) proctests.o test-dinit.o test-bpsys.o test-run-child-proc.o $(ALL_TEST_LDFLAGS)
-	
+
 loadtests: $(parent_objs) loadtests.o test-dinit.o test-bpsys.o test-run-child-proc.o
 	$(CXX) -o loadtests $(parent_objs) loadtests.o test-dinit.o test-bpsys.o test-run-child-proc.o $(ALL_TEST_LDFLAGS)
 

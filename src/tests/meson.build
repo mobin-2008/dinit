@@ -8,7 +8,7 @@ for_tests_incdir = include_directories(
     '../../dasynq/include/'
 )
 for_tests_dinit_sources = [
-    '../service.cc', 
+    '../service.cc',
     '../proc-service.cc',
     '../dinit-log.cc',
     '../load-service.cc',
@@ -49,7 +49,7 @@ envtests_exec = executable(
     'envtests',
     'envtests.cc',
     for_tests_general_sources,
-    for_tests_dinit_sources, 
+    for_tests_dinit_sources,
     include_directories: for_tests_incdir
 )
 test('tests', tests_exec, suite: 'unit_tests')

@@ -245,25 +245,25 @@ class subproc_buffer : private cpbuffer<subproc_bufsize>
 int main(int argc, char **argv)
 {
     using namespace std;
-    
+
     bool show_help = false;
     bool sys_shutdown = false;
     bool use_passed_cfd = false;
-    
+
     auto shutdown_type = shutdown_type_t::POWEROFF;
 
     const char *execname = base_name(argv[0]);
     if (strcmp(execname, "reboot") == 0) {
         shutdown_type = shutdown_type_t::REBOOT;
     }
-        
+
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
             if (strcmp(argv[i], "--help") == 0) {
                 show_help = true;
                 break;
             }
-            
+
             if (strcmp(argv[i], "--system") == 0) {
                 sys_shutdown = true;
             }
@@ -303,37 +303,37 @@ int main(int argc, char **argv)
                 "                     by users.\n";
         return 1;
     }
-    
+
     if (sys_shutdown) {
         do_system_shutdown(shutdown_type);
         return 0;
     }
 
     signal(SIGPIPE, SIG_IGN);
-    
+
     int socknum = -1;
-    
+
     if (use_passed_cfd) {
         socknum = get_passed_cfd();
         if (socknum == -1) {
             use_passed_cfd = false;
         }
     }
-    
+
     if (!use_passed_cfd) {
         socknum = socket(AF_UNIX, SOCK_STREAM, 0);
         if (socknum == -1) {
             perror("socket");
             return 1;
         }
-        
+
         const char *naddr = SYSCONTROLSOCKET;
-        
+
         struct sockaddr_un name;
         name.sun_family = AF_UNIX;
         strcpy(name.sun_path, naddr);
         int sunlen = offsetof(struct sockaddr_un, sun_path) + strlen(naddr) + 1; // family, (string), nul
-        
+
         int connr = connect(socknum, (struct sockaddr *) &name, sunlen);
         if (connr == -1) {
             perror("connect");
@@ -343,7 +343,7 @@ int main(int argc, char **argv)
 
     try {
         cpbuffer_t rbuffer;
-    
+
         check_protocol_version(min_cp_version, max_cp_version, rbuffer, socknum);
 
         // Build buffer;
@@ -358,9 +358,9 @@ int main(int argc, char **argv)
         write_all_x(socknum, buf, bufsize);
 
         // Wait for ACK/NACK
-    
+
         wait_for_reply(rbuffer, socknum);
-        
+
         if (rbuffer[0] != (dinit_cptypes::cp_rply_t)cp_rply::ACK) {
             cerr << "shutdown: control socket protocol error" << endl;
             return 1;
@@ -382,11 +382,11 @@ int main(int argc, char **argv)
         cerr << "shutdown: control socket write error: " << std::strerror(e.errcode) << endl;
         return 1;
     }
-    
+
     while (true) {
         pause();
     }
-    
+
     return 0;
 }
 
@@ -394,12 +394,12 @@ int main(int argc, char **argv)
 void do_system_shutdown(shutdown_type_t shutdown_type)
 {
     using namespace std;
-    
+
     // Mask all signals to prevent death of our parent etc from terminating us
     sigset_t allsigs;
     sigfillset(&allsigs);
     sigprocmask(SIG_SETMASK, &allsigs, nullptr);
-    
+
     int reboot_type = RB_AUTOBOOT; // reboot
 #if defined(RB_POWER_OFF)
     if (shutdown_type == shutdown_type_t::POWEROFF) reboot_type = RB_POWER_OFF;
@@ -409,18 +409,18 @@ void do_system_shutdown(shutdown_type_t shutdown_type)
 #elif defined(RB_HALT)
     if (shutdown_type == shutdown_type_t::HALT) reboot_type = RB_HALT;
 #endif
-    
+
     // Write to console rather than any terminal, since we lose the terminal it seems:
     int consfd = open("/dev/console", O_WRONLY);
     if (consfd != STDOUT_FILENO && consfd != -1) {
         dup2(consfd, STDOUT_FILENO);
     }
-    
+
     loop_t loop;
     subproc_buffer sub_buf {loop, STDOUT_FILENO};
 
     sub_buf.append("Sending TERM/KILL to all processes...\n");
-    
+
     // Send TERM/KILL to all (remaining) processes
     kill(-1, SIGTERM);
 
@@ -447,7 +447,7 @@ void do_system_shutdown(shutdown_type_t shutdown_type)
             "/etc/dinit/shutdown-hook",
             "/lib/dinit/shutdown-hook"
     };
-    
+
     bool do_unmount_ourself = true;
     const int execmask = S_IXOTH | S_IXGRP | S_IXUSR;
     struct stat statbuf;
@@ -481,7 +481,7 @@ void do_system_shutdown(shutdown_type_t shutdown_type)
     }
 
     sync();
-    
+
     sub_buf.append("Issuing shutdown via kernel...\n");
     loop.poll();  // give message a chance to get to console
     reboot(reboot_type);

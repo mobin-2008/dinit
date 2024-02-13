@@ -115,19 +115,19 @@ namespace {
 
         public:
         typedef void (*cb_func_t)(eventloop_t &);
-        
+
         private:
         cb_func_t cb_func;
-        
+
         public:
         callback_signal_handler() : cb_func(nullptr) { }
         callback_signal_handler(cb_func_t pcb_func) :  cb_func(pcb_func) { }
-        
+
         void set_cb_func(cb_func_t cb_func)
         {
             this->cb_func = cb_func;
         }
-        
+
         rearm received(eventloop_t &eloop, int signo, siginfo_p siginfo)
         {
             cb_func(eloop);
@@ -455,10 +455,10 @@ static int process_commandline_arg(char **argv, int argc, int &i, options &opts)
 int dinit_main(int argc, char **argv)
 {
     using namespace std;
-    
+
     am_system_mgr = (getpid() == 1);
     am_system_init = (getuid() == 0);
-    
+
     struct options opts;
 
     // if we are PID 1 and user id 0, we are *most probably* the system init. (Or on linux at least, we
@@ -495,7 +495,7 @@ int dinit_main(int argc, char **argv)
             dup2(twofd, 1);
             dup2(twofd, 2);
         }
-        
+
         if (onefd > 2) close(onefd);
         if (twofd > 2) close(twofd);
 
@@ -530,9 +530,9 @@ int dinit_main(int argc, char **argv)
     signal(SIGTSTP, SIG_IGN);
     signal(SIGTTIN, SIG_IGN);
     signal(SIGTTOU, SIG_IGN);
-    
+
     signal(SIGPIPE, SIG_IGN);
-    
+
     event_loop.init();
 
     if (!am_system_init && !control_socket_path_set) {
@@ -549,7 +549,7 @@ int dinit_main(int argc, char **argv)
             control_socket_path = control_socket_str.c_str();
         }
     }
-    
+
     if (services_to_start.empty()) {
         services_to_start.push_back("boot");
     }
@@ -569,7 +569,7 @@ int dinit_main(int argc, char **argv)
 
     sigint_watcher.add_watch(event_loop, SIGINT);
     sigterm_watcher.add_watch(event_loop, SIGTERM);
-    
+
     if (am_system_mgr) {
         // PID 1: we may ask for console input; SIGQUIT exec's shutdown
         console_input_io.add_watch(event_loop, STDIN_FILENO, dasynq::IN_EVENTS, false);
@@ -594,7 +594,7 @@ int dinit_main(int argc, char **argv)
         flush_log();
         return EXIT_FAILURE;
     }
-    
+
 #ifdef __linux__
     if (am_system_mgr) {
         // Disable non-critical kernel output to console
@@ -612,7 +612,7 @@ int dinit_main(int argc, char **argv)
     // supplied? We'll play it safe and explicitly target our own process:
     procctl(P_PID, getpid(), PROC_REAP_ACQUIRE, NULL);
 #endif
-    
+
     service_dir_opts.build_paths(am_system_init);
 
     // Start requested services
@@ -624,7 +624,7 @@ int dinit_main(int argc, char **argv)
     if (am_system_init) {
         log(loglevel_t::NOTICE, false, "Starting system");
     }
-    
+
     // If a log file was specified, open it now.
     if (log_specified) {
         setup_external_log();
@@ -665,9 +665,9 @@ int dinit_main(int argc, char **argv)
     // are scheduled to start). If the socket is not ready yet (may be in case
     // of read-only file system), we will report it when it is.
     control_socket_ready();
-    
+
     run_event_loop:
-    
+
     // Process events until all services have terminated.
     while (services->count_active_services() != 0) {
         event_loop.run();
@@ -677,10 +677,10 @@ int dinit_main(int argc, char **argv)
     if (shutdown_type == shutdown_type_t::REMAIN) {
         goto run_event_loop;
     }
-    
+
     if (am_system_mgr) {
         log_msg_begin(loglevel_t::NOTICE, "No more active services.");
-        
+
         if (shutdown_type == shutdown_type_t::REBOOT) {
             log_msg_end(" Will reboot.");
         }
@@ -694,7 +694,7 @@ int dinit_main(int argc, char **argv)
 
     flush_log();
     close_control_socket();
-    
+
     if (am_system_mgr) {
         if (shutdown_type == shutdown_type_t::NONE) {
             // Services all stopped but there was no shutdown issued. Inform user, wait for ack, and
@@ -718,7 +718,7 @@ int dinit_main(int argc, char **argv)
                 }
             }
         }
-        
+
         const char * cmd_arg;
         if (shutdown_type == shutdown_type_t::HALT) {
             cmd_arg = "-h";
@@ -730,11 +730,11 @@ int dinit_main(int argc, char **argv)
             // power off.
             cmd_arg = "-p";
         }
-        
+
         // Fork and execute dinit-reboot.
         execl(shutdown_exec.c_str(), shutdown_exec.c_str(), "--system", cmd_arg, nullptr);
         log(loglevel_t::ERROR, error_exec_sd, strerror(errno));
-        
+
         // PID 1 must not actually exit, although we should never reach this point:
         while (true) {
             event_loop.run();
@@ -748,7 +748,7 @@ int dinit_main(int argc, char **argv)
         raise(SIGINT);
         sigprocmask(SIG_UNBLOCK, &sigwait_set_int, NULL);
     }
-    
+
     return EXIT_SUCCESS;
 }
 
@@ -891,7 +891,7 @@ static bool open_control_socket(bool report_ro_failure) noexcept
         const char * saddrname = control_socket_path;
         size_t saddrname_len = strlen(saddrname);
         uint sockaddr_size = offsetof(struct sockaddr_un, sun_path) + saddrname_len + 1;
-        
+
         struct sockaddr_un * name = static_cast<sockaddr_un *>(malloc(sockaddr_size));
         if (name == nullptr) {
             log(loglevel_t::ERROR, "Opening control socket: out of memory");
@@ -942,7 +942,7 @@ static bool open_control_socket(bool report_ro_failure) noexcept
             free(name);
             return !have_error;
         }
-        
+
         free(name);
 
         // No connections can be made until we listen, so it is fine to change the permissions now
@@ -979,7 +979,7 @@ static void close_control_socket() noexcept
         int fd = control_socket_io.get_watched_fd();
         control_socket_io.deregister(event_loop);
         close(fd);
-        
+
         // Unlink the socket:
         unlink(control_socket_path);
 

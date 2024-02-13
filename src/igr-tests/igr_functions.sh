@@ -13,7 +13,7 @@ DINIT_BINDIR="${DINIT_BINDIR-../..}"
 #
 # IGR_OUTPUT - directory for test output files (also exported to environment)
 # TEST_NAME - name of the current test
-# QUIET - will be set to "--quiet" unless DEBUG is set 
+# QUIET - will be set to "--quiet" unless DEBUG is set
 #
 # Also, the various functions defined below may be used.
 

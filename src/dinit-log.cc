@@ -53,9 +53,9 @@ class buffered_log_stream : public eventloop_t::fd_watcher_impl<buffered_log_str
     int msg_index;     // index into special message
 
     cpbuffer<4096> log_buffer;
-    
+
     public:
-    
+
     // Incoming:
     int current_index = 0;    // current/next incoming message index
 
@@ -66,13 +66,13 @@ class buffered_log_stream : public eventloop_t::fd_watcher_impl<buffered_log_str
         this->fd = fd;
         release = false;
     }
-    
+
     rearm fd_event(eventloop_t &loop, int fd, int flags) noexcept;
 
     // Check whether the console can be released.
     void flush_for_release();
     bool is_release_set() { return release; }
-    
+
     // Commit a log message
     void commit_msg()
     {
@@ -82,22 +82,22 @@ class buffered_log_stream : public eventloop_t::fd_watcher_impl<buffered_log_str
             set_enabled(event_loop, true);
         }
     }
-    
+
     void rollback_msg()
     {
         log_buffer.trim_to(current_index);
     }
-    
+
     int get_free()
     {
         return log_buffer.get_free();
     }
-    
+
     void append(const char *s, size_t len)
     {
         log_buffer.append(s, len);
     }
-    
+
     // Discard buffer; call only when the stream isn't active.
     void discard()
     {
@@ -142,7 +142,7 @@ void buffered_log_stream::flush_for_release()
     if (release) return;
 
     release = true;
-    
+
     // Try to flush any messages that are currently buffered. (Console is non-blocking
     // so it will fail gracefully).
     rearm rearm_val = fd_event(event_loop, fd, dasynq::OUT_EVENTS);
@@ -177,7 +177,7 @@ rearm buffered_log_stream::fd_event(eventloop_t &loop, int fd, int flags) noexce
                 special = false;
                 discarded = false;
                 msg_index = 0;
-                
+
                 if (release) {
                     release_console();
                     return rearm::DISARM;
@@ -195,23 +195,23 @@ rearm buffered_log_stream::fd_event(eventloop_t &loop, int fd, int flags) noexce
     }
     else {
         // Writing from the regular circular buffer
-        
+
         if (current_index == 0) {
             release_console();
             return rearm::DISARM;
         }
-        
+
         // We try to find a complete line (terminated by '\n') in the buffer, and write it
         // out. Since it may span the circular buffer end, it may consist of two distinct spans,
         // and so we use writev to write them atomically.
-        
+
         struct iovec logiov[2];
-        
+
         char *ptr = log_buffer.get_ptr(0);
         unsigned len = log_buffer.get_contiguous_length(ptr);
         char *creptr = ptr + len;  // contiguous region end
         char *eptr = std::find(ptr, creptr, '\n');
-        
+
         bool will_complete = false;  // will complete this message?
         if (eptr != creptr) {
             eptr++;  // include '\n'
@@ -219,11 +219,11 @@ rearm buffered_log_stream::fd_event(eventloop_t &loop, int fd, int flags) noexce
         }
 
         len = eptr - ptr;
-        
+
         logiov[0].iov_base = ptr;
         logiov[0].iov_len = len;
         int iovs_to_write = 1;
-        
+
         // Do we need the second span?
         if (!will_complete && len != log_buffer.get_length()) {
             ptr = log_buffer.get_buf_base();
@@ -239,7 +239,7 @@ rearm buffered_log_stream::fd_event(eventloop_t &loop, int fd, int flags) noexce
             len += logiov[1].iov_len;
             iovs_to_write = 2;
         }
-        
+
         ssize_t r = bp_sys::writev(fd, logiov, iovs_to_write);
 
         if (r >= 0) {
@@ -259,7 +259,7 @@ rearm buffered_log_stream::fd_event(eventloop_t &loop, int fd, int flags) noexce
             return rearm::REMOVE;
         }
     }
-    
+
     // We've written something by the time we get here. We could fall through to below, but
     // let's give other events a chance to be processed by returning now.
     return rearm::REARM;
@@ -385,7 +385,7 @@ static int log_level_to_syslog_level(loglevel_t l)
         return LOG_ERR;
     default: ;
     }
-    
+
     return LOG_CRIT;
 }
 
@@ -409,7 +409,7 @@ template <typename ... T> static void do_log(loglevel_t lvl, bool to_cons, T ...
     log_current_line[DLOG_CONS] = (lvl >= log_level[DLOG_CONS]) && to_cons;
     log_current_line[DLOG_MAIN] = (lvl >= log_level[DLOG_MAIN]);
     push_to_log(DLOG_CONS, args...);
-    
+
     if (log_current_line[DLOG_MAIN]) {
         if (log_format_syslog[DLOG_MAIN]) {
             char svcbuf[10];

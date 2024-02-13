@@ -13,7 +13,7 @@ template <unsigned SIZE> class cpbuffer
     char buf[SIZE];
     unsigned cur_idx = 0;
     unsigned length = 0;  // number of elements in the buffer
-    
+
     public:
     static constexpr unsigned get_size()
     {
@@ -24,30 +24,30 @@ template <unsigned SIZE> class cpbuffer
     {
         return length;
     }
-    
+
     int get_free() noexcept
     {
         return SIZE - length;
     }
-    
+
     char * get_ptr(int index)
     {
         unsigned pos = cur_idx + index;
         if (pos >= SIZE) pos -= SIZE;
-    
+
         return &buf[pos];
     }
-    
+
     char * get_buf_base()
     {
         return buf;
     }
-    
+
     unsigned get_contiguous_length(char *ptr)
     {
         unsigned eidx = cur_idx + length;
         if (eidx >= SIZE) eidx -= SIZE;
-        
+
         if (buf + eidx > ptr) {
             return (buf + eidx) - ptr;
         }
@@ -55,7 +55,7 @@ template <unsigned SIZE> class cpbuffer
             return (buf + SIZE) - ptr;
         }
     }
-    
+
     // Fill by reading from the given fd, return positive if some was read or -1 on error.
     int fill(int fd) noexcept
     {
@@ -68,7 +68,7 @@ template <unsigned SIZE> class cpbuffer
         }
         return r;
     }
-    
+
     // Fill by reading up to the specified amount of bytes from the given fd,
     // Return is the number of bytes read, 0 on end-of-file or -1 on error.
     int fill(int fd, unsigned limit) noexcept
@@ -94,20 +94,20 @@ template <unsigned SIZE> class cpbuffer
         }
         return 1;
     }
-    
+
     // Trim the buffer to the specified length (must be less than current length)
     void trim_to(unsigned new_length)
     {
         length = new_length;
     }
-    
+
     char operator[](int idx) noexcept
     {
         unsigned dest_idx = cur_idx + idx;
         if (dest_idx >= SIZE) dest_idx -= SIZE;
         return buf[dest_idx];
     }
-    
+
     // Remove the given number of bytes from the start of the buffer.
     void consume(unsigned amount) noexcept
     {
@@ -115,7 +115,7 @@ template <unsigned SIZE> class cpbuffer
         if (cur_idx >= SIZE) cur_idx -= SIZE;
         length -= amount;
     }
-    
+
     // Extract bytes from the buffer. The bytes remain in the buffer.
     void extract(void *dest, unsigned index, unsigned length) noexcept
     {
@@ -132,7 +132,7 @@ template <unsigned SIZE> class cpbuffer
             std::memcpy(dest, buf + index, length);
         }
     }
-    
+
     // Extract string of given length from given index
     // Throws:  std::bad_alloc on allocation failure
     std::string extract_string(unsigned index, unsigned length)
@@ -148,7 +148,7 @@ template <unsigned SIZE> class cpbuffer
             return std::string(buf + index, length);
         }
     }
-    
+
     // Append characters to the buffer. Caller must make certain there
     // is enough space to contain the characters first.
     void append(const char * s, unsigned len) noexcept
@@ -157,7 +157,7 @@ template <unsigned SIZE> class cpbuffer
         if (index >= SIZE) index -= SIZE;
 
         length += len; // (before we destroy len)
-        
+
         unsigned max = SIZE - index;
         std::memcpy(buf + index, s, std::min(max, len));
         if (len > max) {

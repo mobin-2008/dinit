@@ -250,7 +250,7 @@ class service_record
     protected:
     using string = std::string;
     using time_val = dasynq::time_val;
-    
+
     private:
     string service_name;
     service_type_t record_type;
@@ -262,7 +262,7 @@ class service_record
 
     protected:
     service_flags_t onstart_flags;
-    
+
     environment service_env; // holds the environment populated during load
     const char *service_dsc_dir = nullptr; // directory containing service description file
 
@@ -291,7 +291,7 @@ class service_record
 
     bool start_failed : 1;      // failed to start (reset when begins starting)
     bool start_skipped : 1;     // start was skipped by interrupt
-    
+
     bool in_auto_restart : 1;
     bool in_user_restart : 1;
 
@@ -301,26 +301,26 @@ class service_record
 
     // list of dependencies
     typedef std::list<service_dep> dep_list;
-    
+
     // list of dependents
     typedef std::list<service_dep *> dpt_list;
-    
+
     dep_list depends_on;  // services this one depends on
     dpt_list dependents;  // services depending on this one
-    
+
     service_set *services; // the set this service belongs to
-    
+
     std::unordered_set<service_listener *> listeners;
-    
+
     process_service *log_consumer = nullptr;
 
     // Process services:
     bool force_stop; // true if the service must actually stop. This is the
                      // case if for example the process dies; the service,
                      // and all its dependencies, MUST be stopped.
-    
+
     int term_signal = SIGTERM;  // signal to use for process termination
-    
+
     string socket_path; // path to the socket for socket-activation service
     int socket_perms = 0;   // socket permissions ("mode")
     uid_t socket_uid = -1;  // socket user id or -1
@@ -332,34 +332,34 @@ class service_record
 
     // Data for use by service_set
     public:
-    
+
     // Console queue.
     lld_node<service_record> console_queue_node;
-    
+
     // Propagation and start/stop queues
     lls_node<service_record> prop_queue_node;
     lls_node<service_record> stop_queue_node;
-    
+
     protected:
 
     // Service has actually stopped (includes having all dependents
     // reaching STOPPED state).
     void stopped() noexcept;
-    
+
     // Service has successfully started
     void started() noexcept;
-    
+
     // Service failed to start (should be called with state set to STOPPING or STOPPED).
     //   dep_failed: whether failure is recorded due to a dependency failing
     //   immediate_stop: whether to set state as STOPPED and handle complete stop.
     void failed_to_start(bool dep_failed = false, bool immediate_stop = true) noexcept;
-    
+
     // Service stopped (failed), unrecoverably; dependents should not auto-restart
     void unrecoverable_stop() noexcept;
 
     // A dependency has reached STARTED state
     void dependency_started() noexcept;
-    
+
     void all_deps_started() noexcept;
 
     // Start all dependencies, return true if all have started
@@ -379,17 +379,17 @@ class service_record
 
     // check if all dependents have stopped
     bool stop_check_dependents() noexcept;
-    
+
     // issue a stop to all dependents, return true if they are all already stopped
     bool stop_dependents(bool with_restart, bool for_restart) noexcept;
 
     // issue a restart to all hard dependents
     bool restart_dependents() noexcept;
-    
+
     void require() noexcept;
     void release(bool issue_stop = true) noexcept;
     void release_dependencies() noexcept;
-    
+
     // Check if service is, fundamentally, stopped. It is either in the stopped state, or
     // starting but waiting for dependents, i.e. it can be trivially set to stopped state.
     bool is_fundamentally_stopped() noexcept
@@ -397,21 +397,21 @@ class service_record
         return service_state == service_state_t::STOPPED
             || (service_state == service_state_t::STARTING && waiting_for_deps);
     }
-    
+
     void notify_listeners(service_event_t event) noexcept
     {
         for (auto l : listeners) {
             l->service_event(this, event);
         }
     }
-    
+
     // Queue to run on the console. 'acquired_console()' will be called when the console is available.
     // Has no effect if the service has already queued for console.
     void queue_for_console() noexcept;
-    
+
     // Release console (console must be currently held by this service)
     void release_console() noexcept;
-    
+
     // Initiate definite startup
     void initiate_start() noexcept;
 
@@ -524,7 +524,7 @@ class service_record
     virtual ~service_record() noexcept
     {
     }
-    
+
     // Get the type of this service record
     service_type_t get_type() noexcept
     {
@@ -533,12 +533,12 @@ class service_record
 
     // begin transition from stopped to started state or vice versa depending on current and desired state
     void execute_transition() noexcept;
-    
+
     void do_propagation() noexcept;
 
     // Console is available.
     void acquired_console() noexcept;
-    
+
     // Get the target (aka desired) state.
     service_state_t get_target_state() noexcept
     {
@@ -572,12 +572,12 @@ class service_record
     {
         this->auto_restart = auto_restart;
     }
-    
+
     void set_smooth_recovery(bool smooth_recovery) noexcept
     {
         this->smooth_recovery = smooth_recovery;
     }
-    
+
     // Set "on start" flags (commands)
     void set_flags(service_flags_t flags) noexcept
     {
@@ -616,27 +616,27 @@ class service_record
 
     const std::string &get_name() const noexcept { return service_name; }
     service_state_t get_state() const noexcept { return service_state; }
-    
+
     void start() noexcept;  // start the service
     void stop(bool bring_down = true) noexcept;   // stop the service
     bool restart() noexcept; // restart the service, returns true iff restart issued
-    
+
     void forced_stop() noexcept; // force-stop this service and all dependents
-    
+
     // Pin the service in "started" state (when it reaches the state)
     void pin_start() noexcept;
-    
+
     // Pin the service in "stopped" state (when it reaches the state)
     void pin_stop() noexcept
     {
         pinned_stopped = true;
     }
-    
+
     // Remove both "started" and "stopped" pins. If the service is currently pinned
     // in either state but would naturally be in the opposite state, it will immediately
     // commence starting/stopping.
     void unpin() noexcept;
-    
+
     bool is_start_pinned() noexcept
     {
         return pinned_started || dept_pinned_started;
@@ -652,7 +652,7 @@ class service_record
     {
         return is_loading;
     }
-    
+
     bool did_start_fail() noexcept
     {
         return start_failed;
@@ -668,13 +668,13 @@ class service_record
     {
         listeners.insert(listener);
     }
-    
-    // Remove a listener.    
+
+    // Remove a listener.
     void remove_listener(service_listener * listener) noexcept
     {
         listeners.erase(listener);
     }
-    
+
     // Assuming there is one reference (from a control link), return true if this is the only reference,
     // or false if there are others (including dependents, excluding dependents via "before" and "after"
     // links).
@@ -943,7 +943,7 @@ inline auto extract_console_queue(service_record *sr) -> decltype(sr->console_qu
  * processes that want to start, and another set of those that want to stop. These latter
  * two "queues" (not really queues since their order is not important) are used to prevent too
  * much recursion and to prevent service states from "bouncing" too rapidly.
- * 
+ *
  * A service that wishes to start or stop puts itself on the start/stop queue; a service that
  * needs to propagate changes to dependent services or dependencies puts itself on the
  * propagation queue. Any operation that potentially manipulates the queues must be followed
@@ -959,23 +959,23 @@ class service_set
     int active_services;
     std::list<service_record *> records;
     bool restart_enabled; // whether automatic restart is enabled (allowed)
-    
+
     shutdown_type_t shutdown_type = shutdown_type_t::NONE;  // Shutdown type, if stopping
-    
+
     // Services waiting for exclusive access to the console
     dlist<service_record, extract_console_queue> console_queue;
 
     // Propagation and start/stop "queues" - list of services waiting for processing
     slist<service_record, extract_prop_queue> prop_queue;
     slist<service_record, extract_stop_queue> stop_queue;
-    
+
     public:
     service_set() noexcept
     {
         active_services = 0;
         restart_enabled = true;
     }
-    
+
     virtual ~service_set() noexcept
     {
         for (auto * s : records) {
@@ -1036,12 +1036,12 @@ class service_set
         service_record *record = load_service(name);
         service_set::start_service(record);
     }
-    
+
     void add_service(service_record *svc)
     {
         records.push_back(svc);
     }
-    
+
     void remove_service(service_record *svc) noexcept
     {
         records.erase(std::find(records.begin(), records.end(), svc));
@@ -1112,7 +1112,7 @@ class service_set
     {
         return records;
     }
-    
+
     // Add a service record to the state propagation queue. The service record will have its
     // do_propagation() method called when the queue is processed.
     void add_prop_queue(service_record *service) noexcept
@@ -1121,7 +1121,7 @@ class service_set
             prop_queue.insert(service);
         }
     }
-    
+
     // Add a service record to the stop queue. The service record will have its
     // execute_transition() method called when the queue is processed.
     void add_transition_queue(service_record *service) noexcept
@@ -1130,7 +1130,7 @@ class service_set
             stop_queue.insert(service);
         }
     }
-    
+
     // Process state propagation and start/stop queues, until they are empty.
     void process_queues() noexcept
     {
@@ -1145,7 +1145,7 @@ class service_set
             }
         }
     }
-    
+
     // Set the console queue tail (returns previous tail)
     void append_console_queue(service_record * newTail) noexcept
     {
@@ -1155,7 +1155,7 @@ class service_set
             enable_console_log(false);
         }
     }
-    
+
     // Pull and dispatch a waiter from the console queue
     void pull_console_queue() noexcept
     {
@@ -1171,7 +1171,7 @@ class service_set
             front->acquired_console();
         }
     }
-    
+
     void unqueue_console(service_record * service) noexcept
     {
         if (console_queue.is_queued(service)) {
@@ -1195,18 +1195,18 @@ class service_set
     // Notification from service that it is active (state != STOPPED)
     // Only to be called on the transition from inactive to active.
     void service_active(service_record *) noexcept;
-    
+
     // Notification from service that it is inactive (STOPPED)
     // Only to be called on the transition from active to inactive.
     void service_inactive(service_record *) noexcept;
-    
+
     // Find out how many services are active (starting, running or stopping,
     // but not stopped).
     int count_active_services() noexcept
     {
         return active_services;
     }
-    
+
     void stop_all_services(shutdown_type_t type = shutdown_type_t::HALT) noexcept
     {
         restart_enabled = false;
@@ -1217,7 +1217,7 @@ class service_set
         }
         process_queues();
     }
-    
+
     bool is_shutting_down() noexcept
     {
         return !restart_enabled;

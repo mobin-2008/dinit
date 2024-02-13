@@ -69,7 +69,7 @@ class control_conn_watcher : public eventloop_t::bidi_fd_watcher_impl<control_co
     {
         return receive_event(loop, fd, dasynq::IN_EVENTS);
     }
-    
+
     rearm write_ready(eventloop_t &loop, int fd) noexcept
     {
         return receive_event(loop, fd, dasynq::OUT_EVENTS);
@@ -90,30 +90,30 @@ class control_conn_t : private service_listener
     control_conn_watcher iob;
     eventloop_t &loop;
     service_set *services;
-    
+
     bool bad_conn_close = false; // close when finished output?
     bool oom_close = false;      // send final 'out of memory' indicator
 
     // The packet length before we need to re-check if the packet is complete.
     // process_packet() will not be called until the packet reaches this size.
     unsigned chklen;
-    
+
     // Receive buffer
     cpbuffer<1024> rbuf;
-    
+
     template <typename T> using list = std::list<T>;
     template <typename T> using vector = std::vector<T>;
-    
+
     std::unordered_multimap<service_record *, dinit_cptypes::handle_t> service_key_map;
     std::map<dinit_cptypes::handle_t, service_record *> key_service_map;
-    
+
     // Buffer for outgoing packets. Each outgoing packet is represented as a vector<char>.
     list<vector<char>> outbuf;
     // Current output buffer size in bytes.
     unsigned outbuf_size = 0;
     // Current index within the first outgoing packet (all previous bytes have been sent).
     unsigned outpkt_index = 0;
-    
+
     // Queue a packet to be sent
     //  Returns:  false if the packet could not be queued and a suitable error packet
     //              could not be sent/queued (the connection should be closed);
@@ -133,10 +133,10 @@ class control_conn_t : private service_listener
     // Throws:
     //    std::bad_alloc - if an out-of-memory condition prevents processing
     bool process_packet();
-    
+
     // Process a STARTSERVICE/STOPSERVICE packet. May throw std::bad_alloc.
     bool process_start_stop(cp_cmd pktType);
-    
+
     // Process a FINDSERVICE/LOADSERVICE packet. May throw std::bad_alloc.
     bool process_find_load(cp_cmd pktType);
 
@@ -145,7 +145,7 @@ class control_conn_t : private service_listener
 
     // Process an UNPINSERVICE packet. May throw std::bad_alloc.
     bool process_unpin_service();
-    
+
     // Process an UNLOADSERVICE packet.
     bool process_unload_service();
 
@@ -191,7 +191,7 @@ class control_conn_t : private service_listener
     // Notify that data is ready to be read from the socket. Returns true if the connection should
     // be closed.
     bool data_ready() noexcept;
-    
+
     bool send_data() noexcept;
 
     // Check if any dependents will be affected by stopping a service, generate a response packet if so.
@@ -201,7 +201,7 @@ class control_conn_t : private service_listener
 
     // Allocate a new handle for a service; may throw std::bad_alloc
     dinit_cptypes::handle_t allocate_service_handle(service_record *record);
-    
+
     // Find the service corresponding to a service handle; returns nullptr if not found.
     service_record *find_service_for_key(dinit_cptypes::handle_t key) noexcept
     {
@@ -212,19 +212,19 @@ class control_conn_t : private service_listener
             return nullptr;
         }
     }
-    
+
     // Close connection due to out-of-memory condition.
     void do_oom_close() noexcept
     {
         bad_conn_close = true;
         oom_close = true;
     }
-    
+
     // Process service event broadcast.
     // Note that this can potentially be called during packet processing (upon issuing
     // service start/stop orders etc).
     void service_event(service_record *service, service_event_t event) noexcept final override;
-    
+
     public:
     control_conn_t(eventloop_t &loop, service_set * services_p, int fd)
             : iob(loop), loop(loop), services(services_p), chklen(0)
@@ -232,7 +232,7 @@ class control_conn_t : private service_listener
         iob.add_watch(loop, fd, dasynq::IN_EVENTS);
         active_control_conns++;
     }
-    
+
     control_conn_t(const control_conn_t &) = delete;
 
     virtual ~control_conn_t() noexcept;
@@ -260,7 +260,7 @@ inline dasynq::rearm control_conn_cb(eventloop_t * loop, control_conn_watcher * 
             return dasynq::rearm::REMOVED;
         }
     }
-    
+
     // Accept more commands unless the output buffer high water mark is exceeded
     int watch_flags = 0;
     if (!conn->bad_conn_close && conn->outbuf_size < OUTBUF_LIMIT) {

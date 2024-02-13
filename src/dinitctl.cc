@@ -221,7 +221,7 @@ int dinitctl_main(int argc, char **argv)
         }
         else if (command == ctl_cmd::NONE) {
             if (strcmp(argv[i], "start") == 0) {
-                command = ctl_cmd::START_SERVICE; 
+                command = ctl_cmd::START_SERVICE;
             }
             else if (strcmp(argv[i], "wake") == 0) {
                 command = ctl_cmd::WAKE_SERVICE;
@@ -349,7 +349,7 @@ int dinitctl_main(int argc, char **argv)
             }
         }
     }
-    
+
     // Additional argument checks/processing for various commands:
 
     if (command == ctl_cmd::NONE && !show_help) {
@@ -484,7 +484,7 @@ int dinitctl_main(int argc, char **argv)
                 "Try 'dinitctl --help' for more information.\n";
         return 1;
     }
-    
+
     // SIG_LIST doesn't need a control socket connection so handle it specially.
     if (command == ctl_cmd::SIG_LIST) {
         return signal_list();
@@ -513,7 +513,7 @@ int dinitctl_main(int argc, char **argv)
     // Begin the real work: connect to dinit
 
     signal(SIGPIPE, SIG_IGN);
-    
+
     int socknum = -1;
 
     if (use_passed_cfd) {
@@ -540,7 +540,7 @@ int dinitctl_main(int argc, char **argv)
             }
         }
     }
-    
+
     try {
         if (!use_passed_cfd) {
             socknum = connect_to_daemon(control_socket_path);
@@ -878,7 +878,7 @@ static int start_stop_service(int socknum, cpbuffer_t &rbuffer, const char *serv
 
     service_state_t state;
     handle_t handle;
-    
+
     if (command != ctl_cmd::RESTART_SERVICE && command != ctl_cmd::STOP_SERVICE
             && command != ctl_cmd::RELEASE_SERVICE) {
         ignore_unstarted = false;
@@ -1012,7 +1012,7 @@ static int issue_load_service(int socknum, const char *service_name, bool find_o
     // Build buffer;
     srvname_len_t srvname_len = strlen(service_name);
     int bufsize = 3 + srvname_len;
-    
+
     std::unique_ptr<char[]> ubuf(new char[bufsize]);
     auto buf = ubuf.get();
 
@@ -1021,7 +1021,7 @@ static int issue_load_service(int socknum, const char *service_name, bool find_o
     memcpy(buf + 3, service_name, srvname_len);
 
     write_all_x(socknum, buf, bufsize);
-    
+
     return 0;
 }
 
@@ -1030,7 +1030,7 @@ static int issue_load_service(int socknum, const char *service_name, bool find_o
 static int check_load_reply(int socknum, cpbuffer_t &rbuffer, handle_t *handle_p, service_state_t *state_p, bool write_error)
 {
     using namespace std;
-    
+
     cp_rply reply_pkt_h = (cp_rply)rbuffer[0];
     if (reply_pkt_h == cp_rply::SERVICERECORD) {
         fill_buffer_to(rbuffer, socknum, 2 + sizeof(*handle_p));
@@ -1071,19 +1071,19 @@ static int unpin_service(int socknum, cpbuffer_t &rbuffer, const char *service_n
     using namespace std;
 
     handle_t handle;
-    
+
     // Build buffer;
     if (! load_service(socknum, rbuffer, service_name, &handle, nullptr)) {
         return 1;
     }
-    
+
     // Issue UNPIN command.
     {
         auto m = membuf()
                 .append((char)cp_cmd::UNPINSERVICE)
                 .append(handle);
         write_all_x(socknum, m);
-        
+
         wait_for_reply(rbuffer, socknum);
         if (rbuffer[0] != (char)cp_rply::ACK) {
             cerr << "dinitctl: protocol error." << endl;
@@ -1209,7 +1209,7 @@ static int reload_service(int socknum, cpbuffer_t &rbuffer, const char *service_
 static int list_services(int socknum, cpbuffer_t &rbuffer)
 {
     using namespace std;
-    
+
     char cmdbuf[] = { (char)cp_cmd::LISTSERVICES };
     write_all_x(socknum, cmdbuf, 1);
 
@@ -1261,7 +1261,7 @@ static int list_services(int socknum, cpbuffer_t &rbuffer)
             cout << ' ';
         }
         cout << (marked_active ? ']' : rbracket);
-        
+
         if (current == service_state_t::STARTING) {
             cout << "<<";
         }
@@ -1271,7 +1271,7 @@ static int list_services(int socknum, cpbuffer_t &rbuffer)
         else {
             cout << "  ";
         }
-        
+
         cout << (target == service_state_t::STOPPED ? '{' : ' ');
         if (current == service_state_t::STOPPED) {
             bool did_fail = false;
@@ -1294,7 +1294,7 @@ static int list_services(int socknum, cpbuffer_t &rbuffer)
         if (current != service_state_t::STOPPED && has_pid) {
             cout << " (pid: " << service_pid << ")";
         }
-        
+
         if (current == service_state_t::STOPPED && stop_reason == stopped_reason_t::TERMINATED) {
             if (WIFEXITED(exit_status)) {
                 cout << " (exit status: " << WEXITSTATUS(exit_status) << ")";
