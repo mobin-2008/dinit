@@ -211,6 +211,12 @@ Optional options:
   --disable-initgroups              Disable initialization of supplementary groups for run-as
   --enable-auto-restart             Enable auto-restart for services by default [Deprecated]
   --disable-auto-restart            Disable auto-restart for services by default [Deprecated]
+  --enable-capabilities             Enable capabilities support for services [Enabled]
+                                    libcap should be accessible through pkg-config.
+  --disable-capabilities            Disable capabilities support for services
+  --enable-selinux                  Enable SELinux support [Enabled]
+                                    libselinux should be accessible through pkg-config.
+  --disable-selinux                 Disable SELinux support
   --default-start-timeout=sec       Default start-timeout for services [60]
   --default-stop-timeout=sec        Default stop-timeout for services [10]
   --default-auto-restart=(never|on-failure|always)
@@ -265,6 +271,10 @@ for var in PREFIX \
            SHUTDOWN_PREFIX \
            BUILD_SHUTDOWN \
            SUPPORT_CGROUPS \
+           CHECK_SUPPORT_CAPABILITIES \
+           SUPPORT_CAPABILTIES \
+           CHECK_SUPPORT_SELINUX \
+           SUPPORT_SELINUX \
            USE_UTMPX \
            USE_INITGROUPS \
            SYSCONTROLSOCKET \
@@ -304,6 +314,10 @@ for arg in "$@"; do
         --disable-auto-restart|--enable-auto-restart=no) DEFAULT_AUTO_RESTART=NEVER ;; # Deprecated
         --enable-strip|--enable-strip=yes) STRIPOPTS="-s" ;;
         --disable-strip|--enable-strip=no) STRIPOPTS="" ;;
+        --enable-capabilities|--enable-capabilities=yes) CHECK_SUPPORT_CAPABILITIES=1 ;;
+        --disable-capabilities|--enable-capabilities=no) CHECK_SUPPORT_CAPABILITIES=0 ;;
+        --enable-selinux|--enable-selinux=yes) CHECK_SUPPORT_SELINUX=1 ;;
+        --disable-selinux|--enable-selinux=no) CHECK_SUPPORT_SELINUX=0 ;;
         --default-auto-restart=never) DEFAULT_AUTO_RESTART=NEVER ;;
         --default-auto-restart=always) DEFAULT_AUTO_RESTART=ALWAYS ;;
         --default-auto-restart=on-failure) DEFAULT_AUTO_RESTART=ON_FAILURE ;;
@@ -332,6 +346,10 @@ done
 : "${DEFAULT_START_TIMEOUT:="60"}"
 : "${DEFAULT_STOP_TIMEOUT:="10"}"
 : "${USE_INITGROUPS:="1"}"
+: "${CHECK_SUPPORT_CAPABILITIES:="1"}"
+: "${SUPPORT_CAPABILITIES:="1"}"
+: "${CHECK_SUPPORT_SELINUX:="1"}"
+: "${SUPPORT_SELINUX:="1"}"
 if [ "$PLATFORM" = "Linux" ]; then
     : "${BUILD_SHUTDOWN:="yes"}"
     : "${SUPPORT_CGROUPS:="1"}"
@@ -444,6 +462,14 @@ else
     established_TEST_LDFLAGS="$TEST_LDFLAGS_BASE"
 fi
 
+## Dependencies
+if [ "$CHECK_SUPPORT_CAPABILITIES" = "1" ]; then
+    try_optional_pkgconfig_dependency SUPPORT_CAPABILITIES LDFLAGS_BASE CXXFLAGS libcap
+fi
+if [ "$CHECK_SUPPORT_SELINUX" = "1" ]; then
+    try_optional_pkgconfig_dependency SUPPORT_SELINUX LDFLAGS_BASE CXXFLAGS libselinux ">= 4.0"
+fi
+
 # Determine LDFLAGS/TEST_LDFLAGS. In the case of TEST_LDFLAGS we may still add sanitisation
 # options, shortly. 
 if [ "$HAS_LTO" = true ]; then
@@ -524,6 +550,8 @@ STRIPOPTS=$STRIPOPTS
 # Feature settings
 SUPPORT_CGROUPS=$SUPPORT_CGROUPS
 USE_INITGROUPS=$USE_INITGROUPS
+SUPPORT_CAPABILITIES=$SUPPORT_CAPABILITIES
+SUPPORT_SELINUX=$SUPPORT_SELINUX
 
 # Optional settings
 SHUTDOWN_PREFIX=${SHUTDOWN_PREFIX:-}
