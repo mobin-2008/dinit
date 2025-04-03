@@ -713,6 +713,27 @@ int dinit_main(int argc, char **argv)
         if (shutdown_type == shutdown_type_t::SOFTREBOOT) {
             sync(); // Sync to minimise data loss in case soft-boot fails
 
+            const char * const hook_paths[] = {
+                "/etc/dinit/shutdown-hook",
+                "/lib/dinit/shutdown-hook"
+            };
+
+            const int execmask = S_IXOTH | S_IXGRP | S_IXUSR;
+            struct stat statbuf;
+
+            for (size_t i = 0; i < sizeof(hook_paths) / sizeof(hook_paths[0]); ++i) {
+                int stat_r = lstat(hook_paths[i], &statbuf);
+                if (stat_r == 0 && (statbuf.st_mode & execmask) != 0) {
+                    const char *prog_args[2 + argc] = { hook_paths[i], "soft-reboot" };
+                    for (int i = 1; i <= argc; i++) {
+                        prog_args[i + 2] = argv[i];
+                    }
+                    execv(prog_args[0], const_cast<char **>(prog_args));
+                    log(loglevel_t::ERROR, error_exec_dinit, strerror(errno)); // TODO: Custom error message
+                    break;
+                }
+            }
+
             execv(dinit_exec, argv);
             log(loglevel_t::ERROR, error_exec_dinit, strerror(errno));
 
