@@ -93,7 +93,7 @@ cxx_works()
 try_cxx_argument()
 {
     info Checking whether "$2" is accepted for compilation...
-    if $CXX $CXXFLAGS $2 $CXXFLAGS_EXTRA $LDFLAGS $LDFLAGS_EXTRA "$configtmpdir"/testfile.cc \
+    if $CXX $CPPFLAGS $CXXFLAGS $2 $CXXFLAGS_EXTRA $LDFLAGS $LDFLAGS_EXTRA "$configtmpdir"/testfile.cc \
             -c -o "$configtmpdir"/testfile.o > /dev/null 2>&1; then
         rm "$configtmpdir"/testfile.o
         sub_info Yes.
@@ -127,7 +127,7 @@ try_ld_argument()
     info Checking whether "$2" is accepted as a link-time option...
     if [ ! -e "$configtmpdir"/testfile.o ]; then
         # If the object file doesn't exist yet, need to compile
-        if ! $CXX $CXXFLAGS $CXXFLAGS_EXTRA "$configtmpdir"/testfile.cc \
+        if ! $CXX $CPPFLAGS $CXXFLAGS $CXXFLAGS_EXTRA "$configtmpdir"/testfile.cc \
                 -c -o "$configtmpdir"/testfile.o > /dev/null 2>&1; then
             sub_info "No (compilation failed)."
             return
@@ -153,7 +153,7 @@ try_ld_argument()
 try_both_argument()
 {
     info Checking whether "$3" is accepted for compiling and linking...
-    if $CXX $CXXFLAGS $CXXFLAGS_EXTRA $LDFLAGS $LDFLAGS_EXTRA $3 "$configtmpdir"/testfile.cc \
+    if $CXX $CPPFLAGS $CXXFLAGS $CXXFLAGS_EXTRA $LDFLAGS $LDFLAGS_EXTRA $3 "$configtmpdir"/testfile.cc \
             -o "$configtmpdir"/testfile > /dev/null 2>&1; then
         sub_info Yes.
         rm "$configtmpdir"/testfile
