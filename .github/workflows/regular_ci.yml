@@ -171,7 +171,7 @@ jobs:
           -fsanitize=signed-integer-overflow,integer-divide-by-zero \
           -fsanitize-trap=signed-integer-overflow,integer-divide-by-zero \
           -fno-sanitize-recover"
-          export TEST_LDFLAGS="" # ASLR breaks -fsanitize=address,undefined
+          #export TEST_LDFLAGS="" # ASLR breaks -fsanitize=address,undefined
           ./configure
           gmake
           file ./src/dinit
