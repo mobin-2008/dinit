@@ -162,6 +162,8 @@ jobs:
     - name: Getting dependencies, Configure, Build, Print dinit executable file architecture, Unit & integration tests
       run: |
         sudo pkg update && sudo pkg install -y gmake m4 file llvm
+        clang++ -dumpmachine
+        clang++ --version
         export CXXFLAGS="-std=c++11 \
         -flto \
         -fstack-clash-protection \
