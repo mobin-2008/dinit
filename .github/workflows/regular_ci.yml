@@ -160,9 +160,9 @@ jobs:
           version: '15.0'
           sync_files: runner-to-vm
 
-      - name: Get depends, Configure, Build & Test
+      - name: Getting dependencies, Configure, Build, Print dinit executable file architecture, Unit & integration tests
         run: |
-          pkg update && ASSUME_ALWAYS_YES=YES pkg install gmake m4 file llvm
+          sudo pkg update && sudo pkg -y install gmake m4 file llvm
           export CXXFLAGS="-std=c++11 \
           -flto \
           -fstack-clash-protection \
