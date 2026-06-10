@@ -159,12 +159,17 @@ jobs:
         operating_system: freebsd
         version: '15.0'
 
-    - name: Getting dependencies, Print clang++ architecture and version, Configure, Build, Print dinit executable file architecture, Unit & integration tests
+    - name: Getting dependencies
       run: |
-        sudo pkg update && sudo pkg install -y gmake m4 file llvm
+        sudo pkg update
+        sudo pkg install -y gmake m4 file llvm
+    - name: Print clang++ architecture and version
+      run: |
         clang++ -dumpmachine
         clang++ --version
-        export CXXFLAGS="-std=c++11 \
+    - name: Configure
+      run: |
+        ./configure CXXFLAGS="-std=c++11 \
         -flto \
         -fstack-clash-protection \
         -fvisibility=hidden \
@@ -172,11 +177,14 @@ jobs:
         -fsanitize=signed-integer-overflow,integer-divide-by-zero \
         -fsanitize-trap=signed-integer-overflow,integer-divide-by-zero \
         -fno-sanitize-recover"
-        ./configure
-        gmake
-        file ./src/dinit
-        gmake check
-        gmake check-igr
+    - name: Build
+      run: gmake
+    - name: Print dinit executable file architecture
+      run: file ./src/dinit
+    - name: Unit tests
+      run: gmake check
+    - name: Integration tests
+      run: gmake check-igr
     - name: Upload igr-tests output file(s) on failure
       uses: actions/upload-artifact@v4.3.2
       if: failure()
