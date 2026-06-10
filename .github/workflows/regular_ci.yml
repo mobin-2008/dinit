@@ -150,6 +150,11 @@ jobs:
     defaults:
       run:
         shell: cpa.sh {0}
+    strategy:
+      fail-fast: false # Upload src/igr-tests/*/output/* files in igr-tests
+      matrix:
+        include:
+          - arch: 'amd64'
 
     steps:
     - uses: actions/checkout@v6
@@ -158,7 +163,6 @@ jobs:
       with:
         operating_system: freebsd
         version: '15.0'
-
     - name: Getting dependencies
       run: |
         sudo pkg update
