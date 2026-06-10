@@ -159,7 +159,7 @@ jobs:
         operating_system: freebsd
         version: '15.0'
 
-    - name: Getting dependencies, Configure, Build, Print dinit executable file architecture, Unit & integration tests
+    - name: Getting dependencies, Print clang++ architecture and version, Configure, Build, Print dinit executable file architecture, Unit & integration tests
       run: |
         sudo pkg update && sudo pkg install -y gmake m4 file llvm
         clang++ -dumpmachine
