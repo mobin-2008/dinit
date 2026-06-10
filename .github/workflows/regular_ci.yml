@@ -144,3 +144,36 @@ jobs:
       with:
           name: igr-tests_output
           path: src/igr-tests/*/output/*
+
+  FreeBSD-15_build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: cpa.sh {0}
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Start VM
+        uses: cross-platform-actions/action@v1.2.0
+        with:
+          operating_system: freebsd
+          version: '15.0'
+          sync_files: runner-to-vm
+
+      - name: Get depends, Configure, Build & Test
+        run: |
+          pkg update && ASSUME_ALWAYS_YES=YES pkg install gmake m4 file llvm
+          export CXXFLAGS="-std=c++11 \
+          -flto \
+          -fstack-clash-protection \
+          -fvisibility=hidden \
+          -fsanitize=cfi \
+          -fsanitize=signed-integer-overflow,integer-divide-by-zero \
+          -fsanitize-trap=signed-integer-overflow,integer-divide-by-zero \
+          -fno-sanitize-recover"
+          export TEST_LDFLAGS=""
+          ./configure
+          gmake
+          file ./src/dinit
+          gmake check
+          gmake check-igr
