@@ -162,7 +162,7 @@ jobs:
 
       - name: Getting dependencies, Configure, Build, Print dinit executable file architecture, Unit & integration tests
         run: |
-          sudo pkg update && sudo pkg -y install gmake m4 file llvm
+          sudo pkg update && sudo pkg install -y gmake m4 file llvm
           export CXXFLAGS="-std=c++11 \
           -flto \
           -fstack-clash-protection \
@@ -171,7 +171,7 @@ jobs:
           -fsanitize=signed-integer-overflow,integer-divide-by-zero \
           -fsanitize-trap=signed-integer-overflow,integer-divide-by-zero \
           -fno-sanitize-recover"
-          export TEST_LDFLAGS=""
+          export TEST_LDFLAGS="" # ASLR breaks -fsanitize=address,undefined
           ./configure
           gmake
           file ./src/dinit
