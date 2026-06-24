@@ -166,6 +166,11 @@ jobs:
       run: |
         sudo apt-get update
         sudo DEBIAN_FRONTEND=noninteractive apt-get install qemu-system xorriso -y
+    # TODO: Explain this
+    - name: Prepare repository for being transfered
+      run: |
+        mkdir repo
+        mv * repo/ || true
     - name: Getting FreeBSD BASIC-CI image
       run: |
         wget -nv https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
@@ -208,7 +213,7 @@ jobs:
       run: |
         TIMEOUT=0
         while :; do
-          if ! scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r . runner@localhost:~/; then
+          if ! scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r repo/. runner@localhost:~/; then
             TIMEOUT=$((TIMEOUT + 1))
             [ $TIMEOUT -gt 60 ] && exit 1
             sleep 1
