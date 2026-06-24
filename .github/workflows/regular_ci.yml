@@ -201,9 +201,8 @@ jobs:
           ssh -o StrictHostKeyChecking=no \
             -p 2222 runner@localhost \
             'uname -a' && break
+          sleep 1
           TIMEOUT=$((TIMEOUT + 1))
         done
     - name: QEMU log
-      if: failure()
-      run: |
-        cat qemu.log
+      run: cat qemu.log
