@@ -148,9 +148,6 @@ jobs:
 
   FreeBSD-15-with-compiler-hardening_build:
     runs-on: ubuntu-latest
-#    defaults:
-#      run:
-#        shell: cpa.sh {0}
     env:
       SSH: ssh -q -o StrictHostKeyChecking=no -i ed25519 -p 2222 runner@localhost --
       FREEBSD_VERSION: 15.1-RELEASE
@@ -165,7 +162,7 @@ jobs:
     - name: Getting QEMU and xorriso
       run: |
         sudo apt-get update
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install qemu-system xorriso -y
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install qemu-system-x86 xorriso -y
     # TODO: Explain this
     - name: Prepare repository for being transfered
       run: |
@@ -176,7 +173,7 @@ jobs:
         wget -nv https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
         unxz FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
         # Resize the image to have space for LLVM stack
-        qemu-img resize FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw,format=raw 7G
+        qemu-img resize -f raw FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw 7G
     - name: Providing configuration for FreeBSD nuageinit
       run: |
         ssh-keygen -t ed25519 -f ed25519 -N ""
