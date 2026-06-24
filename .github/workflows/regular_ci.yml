@@ -146,28 +146,25 @@ jobs:
 #          name: igr-tests_output
 #          path: src/igr-tests/*/output/*
 
-  FreeBSD-15-with-compiler-hardening_build:
+  FreeBSD-15-with-clang-hardening_build:
     runs-on: ubuntu-latest
     env:
       SSH: ssh -q -o StrictHostKeyChecking=no -i ed25519 -p 2222 runner@localhost --
       FREEBSD_VERSION: 15.1-RELEASE
     strategy:
-      fail-fast: false # Upload src/igr-tests/*/output/* files in igr-tests
+      fail-fast: false # Don't lose QEMU log on failure
       matrix:
         include:
           - arch: 'amd64'
 
     steps:
     - uses: actions/checkout@v7
+      with:
+        path: 'repo/'
     - name: Getting QEMU and xorriso
       run: |
         sudo apt-get update
         sudo DEBIAN_FRONTEND=noninteractive apt-get install qemu-system-x86 xorriso -y
-    # TODO: Explain this
-    - name: Prepare repository for being transfered
-      run: |
-        mkdir repo
-        mv * repo/ || true
     - name: Getting FreeBSD BASIC-CI image
       run: |
         wget -nv https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
