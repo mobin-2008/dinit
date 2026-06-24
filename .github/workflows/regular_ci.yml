@@ -175,6 +175,7 @@ jobs:
       run: |
         wget -nv https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
         unxz FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
+        qemu-img resize FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw 7G
     - name: Providing configuration for FreeBSD nuageinit
       run: |
         ssh-keygen -t ed25519 -f ed25519 -N ""
@@ -195,6 +196,9 @@ jobs:
           - kldload mac_do
           - sysctl security.mac.do.enabled=1
           - sysctl security.mac.do.rules="gid=0>uid=0;uid=$(id -u runner)>uid=0,gid=0,+gid=*"
+          - gpart recover ada0
+          - gpart resize -i 4 ada0
+          - growfs -y /
         _EOF
         cat << "_EOF" > cidata/meta-data
         instance-id: github-actions
