@@ -164,10 +164,10 @@ jobs:
     - name: Getting FreeBSD BASIC-CI image
       run: |
         wget https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
-        unxz ${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
+        unxz FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
     - name: Mount FreeBSD BASIC-CI image
       run: |
-        losetup -f ${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
+        losetup -f FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
         mkdir freebsd_image
         mount /dev/loop0 freebsd_image/
     - name: List directory
