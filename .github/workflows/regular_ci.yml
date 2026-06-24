@@ -162,17 +162,18 @@ jobs:
       with:
         # This makes it easier for copying repository files to VM
         path: 'repo/'
-    - name: Getting QEMU and xorriso
+    - name: Get QEMU and xorriso
       run: |
         sudo apt-get update
         sudo DEBIAN_FRONTEND=noninteractive apt-get install qemu-system-x86 xorriso -y
-    - name: Getting FreeBSD BASIC-CI image
+    - name: Get FreeBSD BASIC-CI image
       run: |
         wget -nv https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
+        curl -L https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/CHECKSUM.SHA512 | sha512sum -c
         unxz FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
         # Resize the image to have space for LLVM stack
         qemu-img resize -f raw FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw 7G
-    - name: Preparing ssh key and configuration for FreeBSD nuageinit
+    - name: Prepare ssh key and configuration for FreeBSD nuageinit
       run: |
         ssh-keygen -t ed25519 -f ed25519 -N ""
         mkdir cidata
@@ -195,7 +196,7 @@ jobs:
         local-hostname: freebsd-ci
         _EOF
         xorriso -as mkisofs -o cidata.iso -V cidata cidata/
-    - name: Running the VM
+    - name: Run the VM
       run: |
         sudo qemu-system-x86_64 \
          -machine accel=kvm \
@@ -216,7 +217,7 @@ jobs:
           [ $TIMEOUT -gt 60 ] && exit 1
           sleep 1
         done
-    - name: Getting dependencies
+    - name: Get dependencies
       run: |
         $SSH mdo pkg install -y gmake m4 file llvm
     - name: Print clang++ architecture and version
@@ -245,6 +246,6 @@ jobs:
     - name: Integration tests
       run: |
         $SSH gmake check-igr
-    - name: QEMU log
+    - name: Print QEMU log
       if: always()
       run: cat qemu.log
