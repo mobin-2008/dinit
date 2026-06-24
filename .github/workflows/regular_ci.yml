@@ -213,13 +213,12 @@ jobs:
       run: |
         TIMEOUT=0
         while :; do
-          if ! scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r repo/. runner@localhost:~/; then
-            TIMEOUT=$((TIMEOUT + 1))
-            [ $TIMEOUT -gt 60 ] && exit 1
-            sleep 1
-            continue
+          if scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r repo/. runner@localhost:~/; then
+            break
           fi
-          break
+          TIMEOUT=$((TIMEOUT + 1))
+          [ $TIMEOUT -gt 60 ] && exit 1
+          sleep 1
         done
     - name: Getting dependencies
       run: |
