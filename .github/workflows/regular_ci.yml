@@ -168,7 +168,9 @@ jobs:
     - name: Mount FreeBSD BASIC-CI image
       run: |
         LO_DEVICE=$(sudo losetup --find --show FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw)
+        sudo modprobe ufs
+        lsblk
         mkdir freebsd_image
-        sudo mount ${LO_DEVICE} freebsd_image/
+        sudo mount -t ufs ${LO_DEVICE} freebsd_image/
     - name: List directory
       run: ls -lah freebsd_image/
