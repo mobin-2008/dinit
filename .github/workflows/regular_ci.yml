@@ -223,11 +223,8 @@ jobs:
           fi
           break
         done
-    - name: Bootstrap pkg
-      run: $SSH mdo /bin/sh -c ASSUME_ALWAYS_YES=yes pkg bootstrap
     - name: Getting dependencies
       run: |
-        $SSH mdo pkg update
         $SSH mdo pkg install -y gmake m4 file llvm
     - name: Print clang++ architecture and version
       run: |
