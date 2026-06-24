@@ -193,13 +193,14 @@ jobs:
          -drive file=FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw,format=raw \
          -cdrom cidata.iso \
          -nic user,hostfwd=tcp::2222-:22 \
-         -display none \
-         -daemonize
+         -display curses \
+         -daemonize > qemu.log
     - name: Test uname
       run: |
         TIMEOUT=0
-        while [ $TIMEOUT -lt 60 ]; then
+        while [ $TIMEOUT -lt 60 ]; do
           ssh -o StrictHostKeyChecking=no \
             -p 2222 runner@localhost \
             'uname -a' && break
           TIMEOUT=$(TIMEOUT + 1)
+        done
