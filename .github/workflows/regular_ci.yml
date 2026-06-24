@@ -227,8 +227,8 @@ jobs:
       run: $SSH mdo /bin/sh -c ASSUME_ALWAYS_YES=yes pkg bootstrap
     - name: Getting dependencies
       run: |
-        $SSH pkg update
-        $SSH pkg install -y gmake m4 file llvm
+        $SSH mdo pkg update
+        $SSH mdo pkg install -y gmake m4 file llvm
     - name: Print clang++ architecture and version
       run: |
         $SSH clang++ -dumpmachine
