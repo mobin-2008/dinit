@@ -167,8 +167,8 @@ jobs:
         unxz FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
     - name: Mount FreeBSD BASIC-CI image
       run: |
-        losetup -f FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
+        LO_DEVICE=$(losetup --find --show FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw)
         mkdir freebsd_image
-        mount /dev/loop0 freebsd_image/
+        mount ${LO_DEVICE} freebsd_image/
     - name: List directory
       run: ls -lah freebsd_image/
