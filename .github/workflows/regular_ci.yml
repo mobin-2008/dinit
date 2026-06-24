@@ -183,11 +183,7 @@ jobs:
             ssh_authorized_keys:
               $(cat ed25519.pub)
         packages:
-          - gmake
-          - m4
-          - file
-          - llvm
-        package_update: true
+          - sudo
         _EOF
         cat << "_EOF" > cidata/meta-data
         instance-id: github-actions
@@ -206,9 +202,10 @@ jobs:
          -nographic > qemu.log &
     - name: Copy files to VM
       run: scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r . ~/
-#    - name: Getting dependencies
-#      run: |
-#        $SSH sudo pkg install -y gmake m4 file llvm
+    - name: Getting dependencies
+      run: |
+        $SSH sudo pkg update
+        $SSH sudo pkg install -y gmake m4 file llvm
     - name: Print clang++ architecture and version
       run: |
         $SSH clang++ -dumpmachine
