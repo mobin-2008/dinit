@@ -186,7 +186,7 @@ jobs:
         instance-id: github-actions
         local-hostname: freebsd-ci
         _EOF
-        genisoimage -o cidata.iso -V cidata cidata/
+        xorriso -as mkisofs -o cidata.iso -V cidata cidata/
     - name: Running the VM
       run: |
         sudo qemu-system-x86_64 \
@@ -199,16 +199,11 @@ jobs:
          -nographic > qemu.log &
     - name: Test uname
       run: |
-        TIMEOUT=0
-        while [ $TIMEOUT -lt 60 ]; do
-          ssh \
-            -o StrictHostKeyChecking=no \
-            -i ed25519 \
-            -p 2222 runner@localhost \
-            'uname -a' && break
-          sleep 1
-          TIMEOUT=$((TIMEOUT + 1))
-        done
+        ssh \
+          -o StrictHostKeyChecking=no \
+          -i ed25519 \
+          -p 2222 runner@localhost \
+          'uname -a'
     - name: QEMU log
       if: always()
       run: cat qemu.log
