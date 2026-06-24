@@ -164,7 +164,7 @@ jobs:
     - name: Getting QEMU
       run: |
         sudo apt-get update
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install qemu-system-x86_64 -y
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install qemu-system -y
     - name: Getting FreeBSD BASIC-CI image
       run: |
         wget -nv https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
