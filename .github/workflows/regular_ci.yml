@@ -236,13 +236,13 @@ jobs:
         $SSH clang++ --version
     - name: Configure
       run: |
-        $SSH ./configure CXXFLAGS="-std=c++11 \
-        -flto \
-        -fstack-clash-protection \
-        -fvisibility=hidden \
-        -fsanitize=cfi \
-        -fsanitize=signed-integer-overflow,integer-divide-by-zero \
-        -fsanitize-trap=signed-integer-overflow,integer-divide-by-zero \
+        $SSH ./configure CXXFLAGS="-std=c++11
+        -flto
+        -fstack-clash-protection
+        -fvisibility=hidden
+        -fsanitize=cfi
+        -fsanitize=signed-integer-overflow,integer-divide-by-zero
+        -fsanitize-trap=signed-integer-overflow,integer-divide-by-zero
         -fno-sanitize-recover"
     - name: Build
       run: |
