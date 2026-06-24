@@ -152,7 +152,7 @@ jobs:
 #      run:
 #        shell: cpa.sh {0}
     env:
-      SSH: ssh -q -o StrictHostKeyChecking=no -i ed25519 -p 2222 runner@localhost
+      SSH: ssh -q -o StrictHostKeyChecking=no -o LogLevel=ERROR -i ed25519 -p 2222 runner@localhost --
       FREEBSD_VERSION: 15.1-RELEASE
     strategy:
       fail-fast: false # Upload src/igr-tests/*/output/* files in igr-tests
