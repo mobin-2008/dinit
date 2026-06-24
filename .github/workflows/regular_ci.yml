@@ -224,7 +224,7 @@ jobs:
           break
         done
     - name: Bootstrap pkg
-      run: $SSH mdo ASSUME_ALWAYS_YES=yes pkg bootstrap
+      run: $SSH mdo /bin/sh -c ASSUME_ALWAYS_YES=yes pkg bootstrap
     - name: Getting dependencies
       run: |
         $SSH pkg update
