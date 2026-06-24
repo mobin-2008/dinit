@@ -173,15 +173,18 @@ jobs:
       run: |
         ssh-keygen -t ed25519 -f ed25519 -N ""
         mkdir cidata
-        cat << "_EOF" > cidata/meta-data
+        cat << "_EOF" > cidata/user-data
         #cloud-config
-        hostname: freebsd-ci
         users:
           - default
           - name: runner
             sudo: ALL=(ALL) NOPASSWD:ALL
             ssh_authorized_keys:
               $(cat ed25519.pub)
+        _EOF
+        cat << "_EOF" > cidata/meta-data
+        instance-id: github-actions
+        local-hostname: freebsd-ci
         _EOF
         genisoimage -o cidata.iso -V cidata cidata/
     - name: Running the VM
@@ -191,7 +194,7 @@ jobs:
          -m 2048 \
          -smp 2 \
          -drive file=FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw,format=raw \
-         -cdrom cidata.iso \
+         -drive file=cidata.iso,format=raw,media=cdrom \
          -nic user,hostfwd=tcp::2222-:22 \
          -nographic > qemu.log &
     - name: Test uname
