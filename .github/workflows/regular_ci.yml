@@ -161,7 +161,7 @@ jobs:
           - arch: 'amd64'
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Getting QEMU and xorriso
       run: |
         sudo apt-get update
@@ -187,7 +187,7 @@ jobs:
             ssh_authorized_keys:
               - $(cat ed25519.pub)
         runcmd:
-          - sysctl security.mac.do.rules='uid=$(id -u runner)>uid=0,gid=0,+gid=0,+gid=5'
+          - /bin/sh -c sysctl security.mac.do.rules='uid=$(id -u runner)>uid=0,gid=0,+gid=0,+gid=5'
         _EOF
         cat << "_EOF" > cidata/meta-data
         instance-id: github-actions
@@ -212,11 +212,14 @@ jobs:
             TIMEOUT=$((TIMEOUT + 1))
             [ $TIMEOUT -gt 60 ] && exit 1
             sleep 1
+            continue
           fi
           break
         done
     - name: Bootstrap pkg
-      run:  $SSH mdo ASSUME_ALWAYS_YES=yes pkg bootstrap
+      run: |
+        $SSH id -u
+        $SSH mdo ASSUME_ALWAYS_YES=yes pkg bootstrap
     - name: Getting dependencies
       run: |
         $SSH pkg update
