@@ -161,19 +161,44 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
+    - name: Getting QEMU
+      run: |
+        sudo apt-get update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install qemu-system-x86_64 -y
     - name: Getting FreeBSD BASIC-CI image
       run: |
         wget -nv https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
         unxz FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
-    - name: Mount FreeBSD BASIC-CI image
+    - name: Providing configuration for FreeBSD nuageinit
       run: |
-        LO_DEVICE=$(sudo losetup --find --show --partscan FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw)
-        sudo modprobe ufs
-        lsblk
-        #mkdir freebsd_image
-        #sudo mount -t ufs -o ufstype=ufs2 ${LO_DEVICE} freebsd_image/
-    - name: List directory
-      run: ls -lah freebsd_image/
-    - name: dmesg
-      if: failure()
-      run: sudo dmesg
+        ssh-keygen -t ed25519 -f ed25519 -N ""
+        mkdir cidata
+        cat << "_EOF" > cidata/meta-data
+        #cloud-config
+        hostname: freebsd-ci
+        users:
+          - default
+          - name: runner
+            sudo: ALL=(ALL) NOPASSWD:ALL
+            ssh_authorized_keys:
+              $(cat ed25519.pub)
+        _EOF
+        genisoimage -o cidata.iso -V cidata cidata/
+    - name: Running the VM
+      run: |
+        qemu-system-x86_64 \
+         -machine accel=kvm \
+         -m 2048 \
+         -smp 2 \
+         -drive file=FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw,format=raw \
+         -cdrom cidata.iso \
+         -nic user,hostfwd=tcp::2222-:22 \
+         -daemonize
+    - name: Test uname
+      run: |
+        TIMEOUT=0
+        while [ $TIMEOUT -lt 60 ]; then
+          ssh -o StrictHostKeyChecking=no \
+            -p 2222 runner@localhost \
+            'uname -a' && break
+          TIMEOUT=$(TIMEOUT + 1)
