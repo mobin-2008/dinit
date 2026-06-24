@@ -194,7 +194,7 @@ jobs:
         runcmd:
           - kldload mac_do
           - sysctl security.mac.do.enabled=1
-          - sysctl security.mac.do.rules="gid=0>uid=0;uid=$(id -u runner)>uid=0,gid=0"
+          - sysctl security.mac.do.rules="gid=0>uid=0;uid=$(id -u runner)>uid=0,gid=0,+gid=*"
         _EOF
         cat << "_EOF" > cidata/meta-data
         instance-id: github-actions
@@ -224,9 +224,7 @@ jobs:
           break
         done
     - name: Bootstrap pkg
-      run: |
-        $SSH id -u
-        $SSH mdo ASSUME_ALWAYS_YES=yes pkg bootstrap
+      run: $SSH mdo ASSUME_ALWAYS_YES=yes pkg bootstrap
     - name: Getting dependencies
       run: |
         $SSH pkg update
