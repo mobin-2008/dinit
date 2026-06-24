@@ -147,7 +147,7 @@ jobs:
 #          path: src/igr-tests/*/output/*
 
   FreeBSD-15-with-clang-hardening_build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       SSH: ssh -q -o StrictHostKeyChecking=no -i ed25519 -p 2222 runner@localhost --
       FREEBSD_VERSION: 15.1-RELEASE
@@ -203,8 +203,8 @@ jobs:
       run: |
         sudo qemu-system-x86_64 \
          -machine accel=kvm \
-         -m 2048 \
-         -smp 2 \
+         -m 4096 \
+         -smp 4 \
          -drive file=FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw,format=raw,if=virtio \
          -drive file=cidata.iso,format=raw,media=cdrom \
          -nic user,model=virtio-net-pci,hostfwd=tcp::2222-:22 \
