@@ -186,7 +186,7 @@ jobs:
         genisoimage -o cidata.iso -V cidata cidata/
     - name: Running the VM
       run: |
-        qemu-system-x86_64 \
+        sudo qemu-system-x86_64 \
          -machine accel=kvm \
          -m 2048 \
          -smp 2 \
