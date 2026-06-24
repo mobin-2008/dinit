@@ -175,8 +175,8 @@ jobs:
       run: |
         wget -nv https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
         unxz FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
-        # Resize the image to be able to install LLVM later on
-        qemu-img resize FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw 7G
+        # Resize the image to have space for LLVM stack
+        qemu-img resize FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw,format=raw 7G
     - name: Providing configuration for FreeBSD nuageinit
       run: |
         ssh-keygen -t ed25519 -f ed25519 -N ""
@@ -213,7 +213,7 @@ jobs:
          -smp 2 \
          -drive file=FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw,format=raw,if=virtio \
          -drive file=cidata.iso,format=raw,media=cdrom \
-         -nic user,hostfwd=tcp::2222-:22 \
+         -nic user,model=virtio-net-pci,hostfwd=tcp::2222-:22 \
          -nographic > qemu.log 2>&1 &
     - name: Copy files to VM
       run: |
