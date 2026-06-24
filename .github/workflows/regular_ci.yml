@@ -152,6 +152,7 @@ jobs:
 #      run:
 #        shell: cpa.sh {0}
     env:
+      SSH: ssh -q -o StrictHostKeyChecking=no -i ed25519 -p 2222 runner@localhost
       FREEBSD_VERSION: 15.1-RELEASE
     strategy:
       fail-fast: false # Upload src/igr-tests/*/output/* files in igr-tests
@@ -197,13 +198,38 @@ jobs:
          -drive file=cidata.iso,format=raw,media=cdrom \
          -nic user,hostfwd=tcp::2222-:22 \
          -nographic > qemu.log &
-    - name: Test uname
+    - name: Copy files to VM
+      run: scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r . ~/
+    - name: Getting dependencies
       run: |
-        ssh -q \
-          -o StrictHostKeyChecking=no \
-          -i ed25519 \
-          -p 2222 runner@localhost \
-          'ls -lah; pwd'
+        "$SSH" sudo pkg update
+        "$SSH" sudo pkg install -y gmake m4 file llvm
+    - name: Print clang++ architecture and version
+      run: |
+        "$SSH" clang++ -dumpmachine
+        "$SSH" clang++ --version
+    - name: Configure
+      run: |
+        "$SSH"./configure CXXFLAGS="-std=c++11 \
+        -flto \
+        -fstack-clash-protection \
+        -fvisibility=hidden \
+        -fsanitize=cfi \
+        -fsanitize=signed-integer-overflow,integer-divide-by-zero \
+        -fsanitize-trap=signed-integer-overflow,integer-divide-by-zero \
+        -fno-sanitize-recover"
+    - name: Build
+      run: |
+        "$SSH" gmake
+    - name: Print dinit executable file architecture
+      run: |
+        "$SSH" file ./src/dinit
+    - name: Unit tests
+      run: |
+        "$SSH" gmake check
+    - name: Integration tests
+      run: |
+        "$SSH" gmake check-igr
     - name: QEMU log
       if: always()
       run: cat qemu.log
