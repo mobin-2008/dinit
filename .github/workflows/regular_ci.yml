@@ -172,6 +172,8 @@ jobs:
         lsblk
         mkdir freebsd_image
         sudo mount -t ufs -o ufstype=ufs2 ${LO_DEVICE} freebsd_image/
-        sudo dmesg
     - name: List directory
       run: ls -lah freebsd_image/
+    - name: dmesg
+      if: failure()
+      run: sudo dmesg
