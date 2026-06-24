@@ -193,8 +193,7 @@ jobs:
          -drive file=FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw,format=raw \
          -cdrom cidata.iso \
          -nic user,hostfwd=tcp::2222-:22 \
-         -display curses \
-         -daemonize > qemu.log
+         -display curses > qemu.log &
     - name: Test uname
       run: |
         TIMEOUT=0
