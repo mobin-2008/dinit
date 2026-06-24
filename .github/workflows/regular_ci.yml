@@ -193,7 +193,7 @@ jobs:
               - $(cat ed25519.pub)
         runcmd:
           - echo "$(id -u runner)"
-          - /bin/sh -c sysctl security.mac.do.rules="uid=$(id -u runner)>uid=0,gid=0,+gid=0,+gid=5"
+          - sysctl security.mac.do.rules="gid=0>uid=0;uid=$(id -u runner)>uid=0,gid=0"
         _EOF
         cat << "_EOF" > cidata/meta-data
         instance-id: github-actions
