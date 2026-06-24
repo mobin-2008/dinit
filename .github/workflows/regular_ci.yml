@@ -152,7 +152,7 @@ jobs:
 #      run:
 #        shell: cpa.sh {0}
     env:
-      SSH: ssh -q -o StrictHostKeyChecking=no -o LogLevel=ERROR -i ed25519 -p 2222 runner@localhost --
+      SSH: ssh -q -o StrictHostKeyChecking=no -i ed25519 -p 2222 runner@localhost --
       FREEBSD_VERSION: 15.1-RELEASE
     strategy:
       fail-fast: false # Upload src/igr-tests/*/output/* files in igr-tests
@@ -178,12 +178,16 @@ jobs:
         #cloud-config
         users:
           - default
+          - name: root
+            sudo: ALL=(ALL) NOPASSWD:ALL
+            ssh_authorized_keys:
+              - $(cat ed25519.pub)
           - name: runner
             sudo: ALL=(ALL) NOPASSWD:ALL
             ssh_authorized_keys:
-              $(cat ed25519.pub)
-        packages:
-          - sudo
+              - $(cat ed25519.pub)
+        runcmd:
+          - sysctl security.mac.do.rules='uid=$(id -u runner)>uid=0,gid=0,+gid=0,+gid=5'
         _EOF
         cat << "_EOF" > cidata/meta-data
         instance-id: github-actions
@@ -199,20 +203,22 @@ jobs:
          -drive file=FreeBSD-${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw,format=raw \
          -drive file=cidata.iso,format=raw,media=cdrom \
          -nic user,hostfwd=tcp::2222-:22 \
-         -nographic > qemu.log &
+         -nographic > qemu.log 2>&1 &
     - name: Copy files to VM
-      run: scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r . ~/
+      run: scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r . runner@localhost:~/
+    - name: Bootstrap pkg
+      run:  $SSH mdo ASSUME_ALWAYS_YES=yes pkg bootstrap
     - name: Getting dependencies
       run: |
-        $SSH sudo pkg update
-        $SSH sudo pkg install -y gmake m4 file llvm
+        $SSH pkg update
+        $SSH pkg install -y gmake m4 file llvm
     - name: Print clang++ architecture and version
       run: |
         $SSH clang++ -dumpmachine
         $SSH clang++ --version
     - name: Configure
       run: |
-        $SSH./configure CXXFLAGS="-std=c++11 \
+        $SSH ./configure CXXFLAGS="-std=c++11 \
         -flto \
         -fstack-clash-protection \
         -fvisibility=hidden \
