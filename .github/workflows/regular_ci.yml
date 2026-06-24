@@ -205,7 +205,16 @@ jobs:
          -nic user,hostfwd=tcp::2222-:22 \
          -nographic > qemu.log 2>&1 &
     - name: Copy files to VM
-      run: scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r . runner@localhost:~/
+      run: |
+        TIMEOUT=0
+        while :; do
+          if ! scp -o StrictHostKeyChecking=no -i ed25519 -P2222 -r . runner@localhost:~/; then
+            TIMEOUT=$((TIMEOUT + 1))
+            [ $TIMEOUT -gt 60 ] && exit 1
+            sleep 1
+          fi
+          break
+        done
     - name: Bootstrap pkg
       run:  $SSH mdo ASSUME_ALWAYS_YES=yes pkg bootstrap
     - name: Getting dependencies
