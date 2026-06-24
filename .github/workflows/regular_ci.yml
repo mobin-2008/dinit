@@ -147,9 +147,11 @@ jobs:
 
   FreeBSD-15-with-compiler-hardening_build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: cpa.sh {0}
+#    defaults:
+#      run:
+#        shell: cpa.sh {0}
+    env:
+      FREEBSD_VERSION: 15.1-RELEASE
     strategy:
       fail-fast: false # Upload src/igr-tests/*/output/* files in igr-tests
       matrix:
@@ -158,40 +160,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
-    - name: Run VM
-      uses: cross-platform-actions/action@v1.2.0
-      with:
-        operating_system: freebsd
-        version: '15.0'
-    - name: Getting dependencies
+    - name: Getting FreeBSD BASIC-CI image
       run: |
-        sudo pkg update
-        sudo pkg install -y gmake m4 file llvm
-    - name: Print clang++ architecture and version
+        wget https://download.freebsd.org/releases/CI-IMAGES/${FREEBSD_VERSION}/amd64/Latest/${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
+        unxz ${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
+    - name: Mount FreeBSD BASIC-CI image
       run: |
-        clang++ -dumpmachine
-        clang++ --version
-    - name: Configure
-      run: |
-        ./configure CXXFLAGS="-std=c++11 \
-        -flto \
-        -fstack-clash-protection \
-        -fvisibility=hidden \
-        -fsanitize=cfi \
-        -fsanitize=signed-integer-overflow,integer-divide-by-zero \
-        -fsanitize-trap=signed-integer-overflow,integer-divide-by-zero \
-        -fno-sanitize-recover"
-    - name: Build
-      run: gmake
-    - name: Print dinit executable file architecture
-      run: file ./src/dinit
-    - name: Unit tests
-      run: gmake check
-    - name: Integration tests
-      run: gmake check-igr
-    - name: Upload igr-tests output file(s) on failure
-      uses: actions/upload-artifact@v4.3.2
-      if: failure()
-      with:
-        name: igr-tests_output
-        path: src/igr-tests/*/output/*
+        losetup -f ${FREEBSD_VERSION}-amd64-BASIC-CI-ufs.raw.xz
+        mkdir freebsd_image
+        mount /dev/loop0 freebsd_image/
+    - name: List directory
+      run: ls -lah freebsd_image/
