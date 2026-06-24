@@ -192,7 +192,8 @@ jobs:
             ssh_authorized_keys:
               - $(cat ed25519.pub)
         runcmd:
-          - echo "$(id -u runner)"
+          - kldload mac_do
+          - sysctl security.mac.do.enabled=1
           - sysctl security.mac.do.rules="gid=0>uid=0;uid=$(id -u runner)>uid=0,gid=0"
         _EOF
         cat << "_EOF" > cidata/meta-data
