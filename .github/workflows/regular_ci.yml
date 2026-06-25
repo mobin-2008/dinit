@@ -256,7 +256,7 @@ jobs:
       if: failure()
       with:
         name: igr-tests_output
-        path: repo/igr-tests/*/output/*
+        path: repo/igr-tests/**/output/*
     - name: Print QEMU log
       if: always()
       run: cat qemu.log
