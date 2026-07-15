@@ -144,3 +144,79 @@ jobs:
       with:
           name: igr-tests_output
           path: src/igr-tests/*/output/*
+
+  BSD_build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: cpa.sh {0} --environment-variables CXX
+    env:
+      # The NetBSD image has g++ 10 installed by default which is too old so always use clang++
+      CXX: clang++
+    strategy:
+      fail-fast: false # Be able to upload src/igr-tests/igr-output/ files in igr-tests step
+      matrix:
+        include:
+          - name: 'FreeBSD'
+            version: '15.1'
+            arch: 'amd64'
+            hardening: 'clang_hardening'
+          - name: 'OpenBSD'
+            version: '7.9'
+            arch: 'amd64'
+          - name: 'NetBSD'
+            version: '10.1'
+            arch: 'amd64'
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Run VM
+      uses: cross-platform-actions/action@v1.3.0
+      with:
+        operating_system: ${{ matrix.name }}
+        version: ${{ matrix.version }}
+    - name: Getting dependencies (FreeBSD)
+      if: ${{ matrix.name == 'FreeBSD' }}
+      run: |
+        sudo pkg update
+        sudo pkg install -y gmake m4 file llvm
+    - name: Getting dependencies (OpenBSD)
+      if: ${{ matrix.name == 'OpenBSD' }}
+      run: |
+        sudo pkg_add -I gmake m4 llvm%21
+    - name: Getting dependencies (NetBSD)
+      if: ${{ matrix.name == 'NetBSD' }}
+      run: |
+        sudo pkgin update
+        sudo pkgin -y install gmake m4 file clang
+        g++ --version
+    - name: Print clang++ architecture and version
+      run: |
+        clang++ -dumpmachine
+        clang++ --version
+    - name: Configure with Clang hardening flags
+      if: ${{ matrix.hardening == 'clang_hardening' }}
+      run: |
+        ./configure CXXFLAGS="-std=c++11 \
+        -flto \
+        -fstack-clash-protection \
+        -fvisibility=hidden \
+        -fsanitize=cfi \
+        -fsanitize=signed-integer-overflow,integer-divide-by-zero \
+        -fsanitize-trap=signed-integer-overflow,integer-divide-by-zero \
+        -fno-sanitize-recover"
+    - name: Build
+      run: gmake
+    - name: Print dinit executable file architecture
+      run: file ./src/dinit
+    - name: Unit tests
+      run: gmake check
+    - name: Integration tests
+      run: gmake check-igr
+    - name: Upload igr-tests output file(s) on failure
+      uses: actions/upload-artifact@v4.5.0
+      if: failure()
+      with:
+        name: igr-tests_output
+        path: src/igr-tests/igr-output/
+
