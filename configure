@@ -235,6 +235,27 @@ int main()
 _EOF
 }
 
+write_librt_check()
+{
+    cat << _EOF > "$configtmpdir"/librt-check.cc
+#include <ctime>
+#include <csignal>
+
+int main()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+
+    timer_t timer;
+    struct sigevent timer_sigevent;
+    timer_create(CLOCK_REALTIME, &timer_sigevent, &timer);
+    timer_delete(timer);
+
+    return 0;
+}
+_EOF
+}
+
 # Quote a string to preserve its original form after shell evaluation (except that an empty
 # string remains as an empty string).
 quote_for_shell()
@@ -636,8 +657,23 @@ if [ "$AUTO_LDFLAGS" = true ] && [ "$AUTO_CXXFLAGS" = true ]; then
         HAS_LTO="false"
     fi
 fi
-if [ "$AUTO_LDFLAGS_BASE" = true ] && [ "$PLATFORM" = FreeBSD ]; then
-    check_link_argument LDFLAGS_BASE -lrt
+if [ "$AUTO_LDFLAGS_BASE" = true ]; then
+    info "Checking whether using \"-lrt\" is required..."
+    write_librt_check
+    if ! try_compile_source librt-check.cc librt-check.o; then
+        sub_info_error "Couldn't compile the test source for librt check."
+    fi
+    if ! try_link_object librt-check.o librt-check; then
+        if try_link_object librt-check.o librt-check -lrt; then
+            sub_info "Yes."
+            LDFLAGS_BASE="$LDFLAGS_BASE -lrt"
+            LDFLAGS_BASE="${LDFLAGS_BASE# }"
+        else
+            sub_info_error "Couldn't link the test object for librt check."
+        fi
+    else
+        sub_info "No."
+    fi
 fi
 if [ "$SUPPORT_CAPABILITIES" != 0 ]; then
     if [ "$AUTO_LDFLAGS_LIBCAP" = true ]; then
