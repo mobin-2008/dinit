@@ -476,6 +476,7 @@ for arg in "$@"; do
         |TEST_CXXFLAGS_EXTRA=*|LDFLAGS=*|LDFLAGS_EXTRA=*|TEST_LDFLAGS=*\
         |TEST_LDFLAGS_EXTRA=*|CPPFLAGS=*|LDFLAGS_BASE=*|TEST_LDFLAGS_BASE=*\
         |LDFLAGS_LIBCAP=*|CPPFLAGS_LIBCAP=*) eval "${arg%%=*}=\${arg#*=}" ;;
+        -*) warning "Unknown option: ${arg%%=*}" ;;
         *=*) warning "Unknown variable: ${arg%%=*}" ;;
         *) warning "Unknown argument: $arg" ;;
     esac
